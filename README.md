@@ -18,7 +18,7 @@ Architect 2.0 is the **system builder for agentic apps**:
 2. **One product, two lenses** — Builder outcome language vs Architect wiring (graph, diffs, GitHub, env)  
 3. **Agent graph as first-class UI** — the wedge vs chat-only app builders  
 
-Dummy network actions only (no real LLM / OAuth / deploy). Judging priority: **Design/UI/UX & flows → feature coverage → working functionality**.
+Dummy network actions only (no real LLM / OAuth / deploy). Prompt→artifacts uses a deterministic keyword synthesizer. Patterns inspired by Lovable/Bolt/v0 (plan→build, chat-driven UI, multi-screen preview, refine chips) without cloning their visual brand. Judging priority: **Design/UI/UX & flows → feature coverage → working functionality**.
 
 ---
 
@@ -50,7 +50,9 @@ Dummy network actions only (no real LLM / OAuth / deploy). Judging priority: **D
 | Area | Status |
 |---|---|
 | Mock auth (email / Google / GitHub) | ✓ |
-| Home: intent composer, project grid, templates | ✓ |
+| Home: **Build project** vs **Simple chat**; intent composer | ✓ |
+| Single-prompt synthesizer → Blueprint + multi-screen UI + crew + code | ✓ |
+| Generation UX: Understanding → Spec → UI → Agents → Ready; refine chips; checkpoints | ✓ |
 | Consultant (Builder) / Quick starts (Architect) | ✓ |
 | Dual mode + Night/Day theme | ✓ |
 | Build: chat + preview split, Generate phases | ✓ |
@@ -86,12 +88,12 @@ npm run build && npm start
 ## Click-path for judges (≈90s) — Lyzr Submit
 
 1. **Login** → Continue with Google (or any email) → `/home`.  
-2. Open seeded **Lead Nurture Crew** (Live badge) *or* use “Open seed project” on Home.  
-3. **Build** — chat left, Stage preview right. Click **Generate** if needed; try **Run outreach**.  
-4. **Agents** — select Copywriter, edit prompt / tools, **Save changes**. Toggle **Architect** for the node graph.  
-5. **Blueprint** — skim/edit PRD. **Code** (Architect) — open a file + Diff tab.  
-6. **Ship** — Deploy → copper LIVE URL → **Copy URL**.  
-7. Return **Home** — project shows Live. Try **Import**. Toggle **Night / Day**.
+2. Stay on **Build project** — type a *novel* prompt (e.g. “Lead nurture for SaaS SDRs with email + Slack”) → **Build project**.  
+3. Watch timeline: Understanding → Spec/docs → UI screens → Agents → Ready. Blueprint + Stage update together.  
+4. Try refine chips (**Make denser** / **Add auth** / **Dark dashboard**). Open **Agents**, **Blueprint**, **Code**.  
+5. Or switch **Simple chat** on Home — converse without creating a project; **Turn this into a project** promotes.  
+6. Seed **Lead Nurture Crew** still works for Run outreach / Ship / Deploy.  
+7. Toggle **Builder | Architect**, **Night / Day**. **Ship** → Deploy → copy LIVE URL.
 
 Keyboard: `⌘/Ctrl + Enter` sends from home composer · `⌘/Ctrl + .` toggles Builder/Architect.
 

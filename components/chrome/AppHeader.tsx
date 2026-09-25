@@ -15,7 +15,7 @@ export function AppHeader({
   deployHref?: string;
   onDeploy?: () => void;
 }) {
-  const { session, logout, prefs } = useApp();
+  const { session, logout, prefs, setHomeMode } = useApp();
   const pathname = usePathname();
   const router = useRouter();
   const inStudio = pathname?.startsWith("/projects/");
@@ -48,6 +48,24 @@ export function AppHeader({
       <div className="flex items-center gap-1.5 shrink-0">
         {!inStudio && (
           <>
+            {pathname === "/home" && (
+              <div className="seg hidden sm:flex">
+                <button
+                  type="button"
+                  className={`seg-item ${(prefs.homeMode || "build") === "build" ? "active" : ""}`}
+                  onClick={() => setHomeMode("build")}
+                >
+                  Build
+                </button>
+                <button
+                  type="button"
+                  className={`seg-item ${prefs.homeMode === "chat" ? "active" : ""}`}
+                  onClick={() => setHomeMode("chat")}
+                >
+                  Chat
+                </button>
+              </div>
+            )}
             <Link href="/import" className="btn btn-ghost btn-sm">
               Import
             </Link>

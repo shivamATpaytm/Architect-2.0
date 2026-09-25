@@ -3,6 +3,7 @@
 import { AuthGate } from "@/components/chrome/AuthGate";
 import { AppHeader } from "@/components/chrome/AppHeader";
 import { IntentComposer } from "@/components/home/IntentComposer";
+import { SimpleChat } from "@/components/home/SimpleChat";
 import { ProjectGrid } from "@/components/home/ProjectGrid";
 import { ConsultantPanel } from "@/components/home/ConsultantPanel";
 import { useApp } from "@/components/providers/AppProvider";
@@ -19,9 +20,10 @@ export default function HomePage() {
 }
 
 function HomeInner() {
-  const { prefs, createFromIntent, projects, session } = useApp();
+  const { prefs, createFromIntent, projects, session, setHomeMode } = useApp();
   const router = useRouter();
   const liveCount = projects.filter((p) => p.status === "live").length;
+  const homeMode = prefs.homeMode || "build";
 
   return (
     <div className="min-h-screen flex flex-col blueprint-grid">
@@ -33,34 +35,64 @@ function HomeInner() {
               {session?.name ? `Hi, ${session.name}` : "Workspace"}
             </p>
             <h1 className="display text-[32px] m-0 leading-tight">
-              {prefs.mode === "builder" ? "Build agentic apps" : "Engineer agent systems"}
+              {homeMode === "chat"
+                ? "Simple chat"
+                : prefs.mode === "builder"
+                  ? "Build agentic apps"
+                  : "Engineer agent systems"}
             </h1>
             <p className="mt-1.5 mb-0 text-sm" style={{ color: "var(--ink-muted)" }}>
-              {prefs.mode === "builder"
-                ? "Outcomes first — templates, consultant ideas, and your live crews."
-                : "Repos, agents, diffs, and scaffolds — same projects, denser chrome."}
+              {homeMode === "chat"
+                ? "Converse freely — promote any idea into a full docs + UI project when ready."
+                : prefs.mode === "builder"
+                  ? "One prompt builds Blueprint docs and Stage UI together — plus a crew."
+                  : "Repos, multi-screen Stage, agents, diffs — same synthesizer, denser chrome."}
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            <div className="seg">
+              <button
+                type="button"
+                className={`seg-item ${homeMode === "build" ? "active" : ""}`}
+                onClick={() => setHomeMode("build")}
+              >
+                Build project
+              </button>
+              <button
+                type="button"
+                className={`seg-item ${homeMode === "chat" ? "active" : ""}`}
+                onClick={() => setHomeMode("chat")}
+              >
+                Simple chat
+              </button>
+            </div>
             <div className="card px-3 py-2 text-center min-w-[72px]">
               <div className="display text-xl leading-none">{projects.length}</div>
-              <div className="text-[10px] uppercase tracking-wide" style={{ color: "var(--ink-muted)" }}>Projects</div>
+              <div className="text-[10px] uppercase tracking-wide" style={{ color: "var(--ink-muted)" }}>
+                Projects
+              </div>
             </div>
             <div className="card px-3 py-2 text-center min-w-[72px]">
-              <div className="display text-xl leading-none" style={{ color: "var(--signal)" }}>{liveCount}</div>
-              <div className="text-[10px] uppercase tracking-wide" style={{ color: "var(--ink-muted)" }}>Live</div>
-            </div>
-            <div className="card px-3 py-2 text-center min-w-[72px] hidden sm:block">
-              <div className="text-xs mono mt-1" style={{ color: "var(--ink-muted)" }}>⌘.</div>
-              <div className="text-[10px] uppercase tracking-wide" style={{ color: "var(--ink-muted)" }}>Mode</div>
+              <div className="display text-xl leading-none" style={{ color: "var(--signal)" }}>
+                {liveCount}
+              </div>
+              <div className="text-[10px] uppercase tracking-wide" style={{ color: "var(--ink-muted)" }}>
+                Live
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1.45fr_0.85fr] mb-8">
-          <IntentComposer />
-          <ConsultantPanel />
-        </div>
+        {homeMode === "build" ? (
+          <div className="grid gap-4 lg:grid-cols-[1.45fr_0.85fr] mb-8">
+            <IntentComposer />
+            <ConsultantPanel />
+          </div>
+        ) : (
+          <div className="mb-8 max-w-3xl">
+            <SimpleChat />
+          </div>
+        )}
 
         <div className="mb-3 flex items-center justify-between gap-2 flex-wrap">
           <h2 className="m-0 label-caps">Recent projects</h2>
@@ -89,15 +121,26 @@ function HomeInner() {
           <div>
             <div className="font-semibold text-sm">Judge walkthrough</div>
             <div className="text-xs mt-0.5" style={{ color: "var(--ink-muted)" }}>
-              Open Lead Nurture Crew → Build → Agents → Architect mode → Ship → Deploy
+              Home → novel prompt → watch docs+UI generate → Agents → or switch Simple chat → promote
             </div>
           </div>
-          <Link
-            href="/projects/proj-lead-nurture?view=build"
-            className="btn btn-primary btn-sm"
-          >
-            Open seed project
-          </Link>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => {
+                const p = createFromIntent(
+                  "Lead nurture for SaaS SDRs with email + Slack"
+                );
+                router.push(`/projects/${p.id}?view=build`);
+              }}
+            >
+              Try novel prompt
+            </button>
+            <Link href="/projects/proj-lead-nurture?view=build" className="btn btn-primary btn-sm">
+              Open seed project
+            </Link>
+          </div>
         </div>
       </main>
     </div>

@@ -44,7 +44,7 @@ function NewInner() {
       <main className="flex-1 p-6 max-w-2xl mx-auto w-full">
         <h1 className="display text-[32px] m-0 mb-2">New project</h1>
         <p className="mt-0 mb-6" style={{ color: "var(--ink-muted)" }}>
-          Start from intent or a template. Seeds a rich Lead Nurture–style crew you can edit.
+          One prompt builds Blueprint docs + Stage UI screens + agents together. Templates force a known domain.
         </p>
 
         <div className="card p-5 mb-6" style={{ boxShadow: "var(--shadow)" }}>
@@ -71,7 +71,7 @@ function NewInner() {
               router.push(`/projects/${p.id}?view=build`);
             }}
           >
-            Create from intent
+            Build project
           </button>
         </div>
 

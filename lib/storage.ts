@@ -6,12 +6,14 @@ const KEYS = {
   prefs: "architect-prefs",
   projects: "architect-projects",
   agentDrafts: "architect-agent-drafts",
+  simpleChat: "architect-simple-chat",
 } as const;
 
 export const defaultPrefs: AppPreferences = {
   mode: "builder",
   theme: "night",
   defaultMode: "builder",
+  homeMode: "build",
 };
 
 export function loadSession(): UserSession | null {
@@ -56,6 +58,13 @@ function normalizeProject(p: Project): Project {
   return {
     ...p,
     status: status as Project["status"],
+    prompt: p.prompt,
+    domain: p.domain,
+    screens: p.screens ?? [],
+    activeScreenId: p.activeScreenId,
+    generationVersion: p.generationVersion ?? (p.previewReady ? 1 : 0),
+    checkpoints: p.checkpoints ?? [],
+    planMode: p.planMode ?? false,
     dataAssets: p.dataAssets ?? [
       {
         id: "asset-icp",

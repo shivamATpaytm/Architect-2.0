@@ -2,26 +2,31 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Phase, Project } from "@/lib/types";
+import type { BuildStep, Project } from "@/lib/types";
 import { useApp } from "@/components/providers/AppProvider";
 import { uid } from "@/lib/storage";
 
-const PHASE_ORDER: Phase[] = ["consulting", "blueprint", "crew", "stage"];
+const STEP_ORDER: BuildStep[] = ["understanding", "spec", "ui", "agents", "ready"];
+const REFINE_CHIPS = ["Make denser", "Add auth", "Dark dashboard", "Make casual"];
 
 export function ChatPanel({ project }: { project: Project }) {
-  const { updateProject, prefs, showToast } = useApp();
+  const { updateProject, prefs, showToast, refineProject, checkpointProject } = useApp();
   const router = useRouter();
   const [draft, setDraft] = useState("");
-  const [running, setRunning] = useState(false);
-  const [progress, setProgress] = useState<Phase[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [showJump, setShowJump] = useState(false);
 
+  const building =
+    project.status === "building" ||
+    project.status === "queued" ||
+    (project.buildProgress?.state === "building");
+  const currentStep = project.buildProgress?.step || (project.previewReady ? "ready" : "understanding");
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     setShowJump(false);
-  }, [project.chat.length, running]);
+  }, [project.chat.length, building]);
 
   const onScroll = () => {
     const el = listRef.current;
@@ -52,12 +57,31 @@ export function ChatPanel({ project }: { project: Project }) {
       showToast("Use Visual tweak on the Stage toolbar");
       return;
     }
+    // v0-like refine chips mutate UI + docs
+    if (
+      REFINE_CHIPS.some((r) => r.toLowerCase() === lower) ||
+      /denser|auth|dark|casual|warmer|slack|compact/.test(lower)
+    ) {
+      refineProject(project.id, c);
+      return;
+    }
     send(c);
   };
 
   const send = (text?: string) => {
     const content = (text ?? draft).trim();
     if (!content) return;
+    // Chat follow-ups that look like refinements mutate Stage (Bolt-like)
+    if (
+      /denser|compact|auth|sso|dark|casual|warmer|friendly|add |make |remove |slack/.test(
+        content.toLowerCase()
+      ) &&
+      project.previewReady
+    ) {
+      refineProject(project.id, content);
+      setDraft("");
+      return;
+    }
     updateProject(project.id, {
       chat: [
         ...project.chat,
@@ -72,93 +96,14 @@ export function ChatPanel({ project }: { project: Project }) {
           role: "assistant",
           content:
             prefs.mode === "builder"
-              ? "Noted. I'll fold that into the Blueprint and keep the Stage preview in sync."
-              : "Acknowledged. Diff will appear under Code; agent prompts stay editable in Agents.",
+              ? "Noted. Try refine chips (Make denser / Add auth / Dark dashboard) to mutate Stage + Blueprint together — or describe the change in plain language."
+              : "Acknowledged. Diff stays under Code; refine chips mutate screens + PRD. Agent prompts remain editable in Agents.",
           timestamp: new Date().toISOString(),
-          chips: ["Open Blueprint", "Open Agents", "Show code"],
+          chips: ["Make denser", "Add auth", "Dark dashboard", "Open Blueprint"],
         },
       ],
     });
     setDraft("");
-  };
-
-  const generate = async () => {
-    if (running) return;
-    setRunning(true);
-    setProgress([]);
-    let chat = [...project.chat];
-    const start = Math.max(0, PHASE_ORDER.indexOf(project.phase));
-    const script = [
-      {
-        phase: "consulting" as Phase,
-        msg:
-          prefs.mode === "builder"
-            ? "Framed as a sales-ops crew that saves ~6 hrs/week on nurture."
-            : "Contract: 4 agents, HubSpot+Gmail tools, shared ICP KB.",
-      },
-      {
-        phase: "blueprint" as Phase,
-        msg: "Blueprint ready — review PRD sections under Blueprint view.",
-      },
-      {
-        phase: "crew" as Phase,
-        msg: "Crew graph live. Inspect prompts & tools in Agents.",
-      },
-      {
-        phase: "stage" as Phase,
-        msg: "Preview dashboard is on Stage. Deploy when ready.",
-      },
-    ];
-
-    for (let i = start; i < script.length; i++) {
-      const step = script[i];
-      setProgress((prev) => [...prev.filter((p) => p !== step.phase), step.phase]);
-      await wait(700);
-      chat = [
-        ...chat,
-        {
-          id: uid("msg"),
-          role: "system",
-          phase: step.phase,
-          content: `${capitalize(step.phase)} phase complete`,
-          timestamp: new Date().toISOString(),
-        },
-        {
-          id: uid("msg"),
-          role: "assistant",
-          phase: step.phase,
-          content: step.msg,
-          timestamp: new Date().toISOString(),
-          chips:
-            step.phase === "stage"
-              ? ["Open Agents", "Deploy"]
-              : step.phase === "crew"
-                ? ["Open Agents", "Add auth"]
-                : ["Make casual", "Open Blueprint"],
-        },
-      ];
-      updateProject(project.id, {
-        phase: step.phase,
-        chat,
-        previewReady: step.phase === "stage" ? true : project.previewReady,
-        status: step.phase === "stage" ? "ready" : "building",
-        buildProgress: {
-          state: step.phase === "stage" ? "ready" : "building",
-          stepLabel:
-            step.phase === "stage"
-              ? "Ready on Stage"
-              : `${capitalize(step.phase)} in progress`,
-          etaLabel: step.phase === "stage" ? "Done" : "~20s",
-          startedAt: new Date().toISOString(),
-          percent:
-            step.phase === "stage"
-              ? 100
-              : 25 + (PHASE_ORDER.indexOf(step.phase) + 1) * 18,
-        },
-      });
-    }
-    setRunning(false);
-    showToast("Generate complete — Stage is ready");
   };
 
   return (
@@ -172,32 +117,44 @@ export function ChatPanel({ project }: { project: Project }) {
             Chat · {prefs.mode === "builder" ? "Consultant" : "Staff eng"}
           </div>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary btn-sm"
-          disabled={running}
-          onClick={generate}
-        >
-          {running ? "Generating…" : project.previewReady ? "Re-generate" : "Generate"}
-        </button>
+        <div className="flex gap-1.5">
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => checkpointProject(project.id)}
+            disabled={!project.previewReady}
+            title="Save checkpoint"
+          >
+            Checkpoint
+          </button>
+          <span className="chip mono">
+            {building ? "Building…" : project.previewReady ? "Ready" : "Queued"}
+          </span>
+        </div>
       </div>
 
-      {running && (
+      {(building || !project.previewReady) && (
         <div className="px-3 pt-3">
           <div className="progress-card fade-in">
-            <div className="text-xs font-semibold mb-1.5">Building narrative</div>
-            {PHASE_ORDER.map((p) => {
-              const done = progress.includes(p) && project.phase !== p;
-              const active = running && (progress[progress.length - 1] === p || project.phase === p);
-              const cls = done || (progress.includes(p) && p !== progress[progress.length - 1])
+            <div className="text-xs font-semibold mb-1.5">
+              Thinking → Spec → UI → Agents → Ready
+            </div>
+            {STEP_ORDER.map((p) => {
+              const idx = STEP_ORDER.indexOf(p);
+              const cur = STEP_ORDER.indexOf(currentStep);
+              const done = idx < cur || currentStep === "ready";
+              const active = p === currentStep && currentStep !== "ready";
+              const cls = done && !active
                 ? "progress-step done"
-                : active || progress.includes(p)
+                : active
                   ? "progress-step active"
                   : "progress-step";
               return (
                 <div key={p} className={cls}>
-                  <span>{progress.includes(p) ? "✓" : "○"}</span>
-                  <span className="capitalize">{p}</span>
+                  <span>{done && !active ? "✓" : active ? "●" : "○"}</span>
+                  <span className="capitalize">
+                    {p === "spec" ? "Spec / docs" : p === "ui" ? "UI screens" : p}
+                  </span>
                 </div>
               );
             })}
@@ -205,7 +162,11 @@ export function ChatPanel({ project }: { project: Project }) {
         </div>
       )}
 
-      <div ref={listRef} onScroll={onScroll} className="scroll-y flex-1 px-3 py-3 space-y-2.5 min-h-0 relative">
+      <div
+        ref={listRef}
+        onScroll={onScroll}
+        className="scroll-y flex-1 px-3 py-3 space-y-2.5 min-h-0 relative"
+      >
         {project.chat.map((m) => (
           <div
             key={m.id}
@@ -243,7 +204,13 @@ export function ChatPanel({ project }: { project: Project }) {
           <button
             type="button"
             className="btn btn-sm"
-            style={{ position: "sticky", bottom: 8, left: "50%", transform: "translateX(-50%)", zIndex: 2 }}
+            style={{
+              position: "sticky",
+              bottom: 8,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 2,
+            }}
             onClick={() => {
               bottomRef.current?.scrollIntoView({ behavior: "smooth" });
               setShowJump(false);
@@ -254,6 +221,18 @@ export function ChatPanel({ project }: { project: Project }) {
         )}
       </div>
 
+      {project.previewReady && (
+        <div
+          className="px-3 pb-1 flex flex-wrap gap-1.5 shrink-0"
+        >
+          {REFINE_CHIPS.map((c) => (
+            <button key={c} type="button" className="chip chip-accent" onClick={() => refineProject(project.id, c)}>
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div
         className="p-3 border-t shrink-0"
         style={{ borderColor: "var(--border)", background: "var(--surface)" }}
@@ -263,8 +242,8 @@ export function ChatPanel({ project }: { project: Project }) {
             className="input"
             placeholder={
               prefs.mode === "builder"
-                ? "Steer the build — e.g. make the tone warmer…"
-                : "Steer — e.g. add rate limiting to CRM writer…"
+                ? "Refine — e.g. make denser, add auth…"
+                : "Steer — e.g. add rate limiting, dark dashboard…"
             }
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -275,18 +254,16 @@ export function ChatPanel({ project }: { project: Project }) {
               }
             }}
           />
-          <button type="button" className="btn btn-primary" onClick={() => send()} disabled={!draft.trim()}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => send()}
+            disabled={!draft.trim()}
+          >
             Send
           </button>
         </div>
       </div>
     </div>
   );
-}
-
-function wait(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }
