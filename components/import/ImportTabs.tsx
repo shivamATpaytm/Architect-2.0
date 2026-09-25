@@ -5,10 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useApp } from "@/components/providers/AppProvider";
 
 const TABS = [
-  { id: "upload", label: "Upload" },
-  { id: "github", label: "GitHub" },
-  { id: "studio", label: "Studio" },
-  { id: "url", label: "URL" },
+  { id: "upload", label: "Upload", hint: "Zip of an existing app" },
+  { id: "github", label: "GitHub", hint: "Repo → Architect project" },
+  { id: "studio", label: "Studio", hint: "Import a Lyzr Studio agent" },
+  { id: "url", label: "URL", hint: "Clone from a live app URL" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -44,6 +44,7 @@ export function ImportTabs() {
       return;
     }
     setBusy(true);
+    setSteps([]);
     const sequence = [
       "Validating source…",
       "Hydrating agents & tools…",
@@ -52,7 +53,7 @@ export function ImportTabs() {
     ];
     for (const s of sequence) {
       setSteps((prev) => [...prev, s]);
-      await wait(450);
+      await wait(420);
     }
     const label =
       value.trim() ||
@@ -71,23 +72,35 @@ export function ImportTabs() {
   };
 
   return (
-    <div className="card p-5 max-w-xl mx-auto">
-      <div className="flex gap-1 mb-4 flex-wrap">
+    <div className="card p-6 max-w-xl mx-auto" style={{ boxShadow: "var(--shadow)" }}>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-5">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
-            className={`chip ${tab === t.id ? "chip-accent" : ""}`}
+            className="btn"
+            style={{
+              flexDirection: "column",
+              alignItems: "flex-start",
+              gap: 2,
+              padding: "0.65rem 0.7rem",
+              background: tab === t.id ? "var(--accent-soft)" : "var(--surface)",
+              borderColor: tab === t.id ? "var(--accent)" : "var(--border)",
+              color: tab === t.id ? "var(--accent)" : "var(--ink)",
+            }}
             onClick={() => {
               setTab(t.id);
               setSteps([]);
             }}
           >
-            {t.label}
+            <span className="font-semibold text-sm">{t.label}</span>
+            <span className="text-[10px]" style={{ color: "var(--ink-muted)", fontWeight: 400 }}>
+              {t.hint}
+            </span>
           </button>
         ))}
       </div>
-      <label className="block text-sm mb-2" style={{ color: "var(--ink-muted)" }}>
+      <label className="label-caps block mb-1.5">
         {tab === "upload" && "Zip filename (mock)"}
         {tab === "github" && "Repository"}
         {tab === "studio" && "Studio agent"}
@@ -98,24 +111,22 @@ export function ImportTabs() {
         placeholder={placeholder}
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && !busy && start()}
       />
       {tab === "upload" && (
-        <p className="text-xs mt-2" style={{ color: "var(--ink-muted)" }}>
+        <p className="text-xs mt-2 mb-0" style={{ color: "var(--ink-muted)" }}>
           Drag-drop is mocked — type a filename and start import.
         </p>
       )}
-      <button
-        type="button"
-        className="btn btn-primary mt-4"
-        disabled={busy}
-        onClick={start}
-      >
+      <button type="button" className="btn btn-primary mt-4 w-full" disabled={busy} onClick={start}>
         {busy ? "Importing…" : "Start import"}
       </button>
       {steps.length > 0 && (
-        <ul className="mt-4 mb-0 pl-4 text-sm space-y-1">
+        <ul className="mt-4 mb-0 pl-0 list-none text-sm space-y-1.5">
           {steps.map((s) => (
-            <li key={s}>✓ {s}</li>
+            <li key={s} className="progress-step done">
+              <span>✓</span> {s}
+            </li>
           ))}
         </ul>
       )}

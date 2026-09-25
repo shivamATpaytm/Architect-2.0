@@ -19,8 +19,11 @@ export function PhaseRibbon({ phase }: { phase: Phase }) {
         const cls =
           i < idx ? "phase-step done" : i === idx ? "phase-step active" : "phase-step";
         return (
-          <span key={p} className={cls}>
-            {i < idx ? "✓" : i === idx ? "●" : "○"} {LABELS[p]}
+          <span key={p} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+            {i > 0 && <span className="phase-connector" aria-hidden />}
+            <span className={cls}>
+              {i < idx ? "✓" : i === idx ? "●" : "○"} {LABELS[p]}
+            </span>
           </span>
         );
       })}

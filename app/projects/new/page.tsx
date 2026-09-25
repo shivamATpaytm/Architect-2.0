@@ -1,17 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AuthGate } from "@/components/chrome/AuthGate";
 import { AppHeader } from "@/components/chrome/AppHeader";
 import { TEMPLATES } from "@/lib/mock/seed";
 import { useApp } from "@/components/providers/AppProvider";
-import { Suspense } from "react";
 
 export default function NewProjectPage() {
   return (
     <AuthGate>
-      <Suspense fallback={<div className="p-8">Loading…</div>}>
+      <Suspense
+        fallback={
+          <div className="blueprint-grid min-h-screen flex items-center justify-center">
+            Loading…
+          </div>
+        }
+      >
         <NewInner />
       </Suspense>
     </AuthGate>
@@ -37,21 +42,29 @@ function NewInner() {
     <div className="min-h-screen flex flex-col blueprint-grid">
       <AppHeader />
       <main className="flex-1 p-6 max-w-2xl mx-auto w-full">
-        <h1 className="display text-3xl m-0 mb-2">New project</h1>
+        <h1 className="display text-[32px] m-0 mb-2">New project</h1>
         <p className="mt-0 mb-6" style={{ color: "var(--ink-muted)" }}>
           Start from intent or a template. Seeds a rich Lead Nurture–style crew you can edit.
         </p>
 
-        <div className="card p-5 mb-5">
+        <div className="card p-5 mb-6" style={{ boxShadow: "var(--shadow)" }}>
+          <label className="label-caps block mb-1.5">Intent</label>
           <textarea
             className="textarea"
             placeholder="Describe the agentic app…"
             value={intent}
             onChange={(e) => setIntent(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && intent.trim()) {
+                const p = createFromIntent(intent.trim());
+                router.push(`/projects/${p.id}?view=build`);
+              }
+            }}
           />
           <button
             type="button"
             className="btn btn-primary mt-3"
+            disabled={!intent.trim()}
             onClick={() => {
               if (!intent.trim()) return;
               const p = createFromIntent(intent.trim());
@@ -62,15 +75,13 @@ function NewInner() {
           </button>
         </div>
 
-        <h2 className="text-sm uppercase tracking-wide mb-3" style={{ color: "var(--ink-muted)" }}>
-          Templates
-        </h2>
+        <h2 className="label-caps mb-3">Templates</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {TEMPLATES.map((t) => (
             <button
               key={t.id}
               type="button"
-              className="card p-4 text-left"
+              className="card card-hover p-4 text-left"
               onClick={() => {
                 const p = createFromIntent(`Build ${t.name}: ${t.pitch}`, t.id);
                 router.push(`/projects/${p.id}?view=build`);

@@ -6,6 +6,8 @@ Lyzr hiring take-home — a dual-mode vibe-coding demo for **Builders** (non-tec
 
 > Not a Lovable lilac clone, not a v0 void-black shadcn skin, not Replit neon. Visual system: **Paper / Sage / Copper** with blueprint grids, phase ribbon, crew graph, and stage frame.
 
+**Live:** https://architect-2-0.vercel.app · **Repo:** https://github.com/shivamATpaytm/Architect-2.0
+
 ---
 
 ## Vision
@@ -25,12 +27,12 @@ Dummy network actions only (no real LLM / OAuth / deploy). Judging priority: **D
 | Principle | How it shows up |
 |---|---|
 | Plan ↔ Build duality | Phase ribbon + Generate simulation before Stage populates |
-| Preview is the product | Stage frame with device toggles & live URL chrome |
+| Preview is the product | Stage frame with device toggles, live URL chrome, Run outreach |
 | Escape hatches by skill | Builder hides code; Architect opens graph/diff/Ship advanced |
 | Non-destructive modes | Builder \| Architect toggle in `localStorage`, same project IDs |
-| Distinctive craft | Newsreader display + IBM Plex Sans/Mono; Night ink / Day paper tokens |
+| Distinctive craft | Newsreader display + IBM Plex Sans/Mono; Night ink / Day paper |
 
-**Tokens:** background `#F4F1EA` / `#0E1412`, accent sage `#2F6F5E` / `#3D9B82`, signal copper `#C45C26` / `#E07A3D`.
+**Tokens:** background `#F3EEE4` / `#0C1210`, accent sage `#2A6B5A` / `#3D9B82`, signal copper `#C45C26` / `#E07A3D`.
 
 ---
 
@@ -47,19 +49,20 @@ Dummy network actions only (no real LLM / OAuth / deploy). Judging priority: **D
 
 | Area | Status |
 |---|---|
-| Mock auth (email / Google / GitHub) | P0 ✓ |
-| Home: intent composer, project grid, templates | P0 ✓ |
-| Consultant (Builder) / Quick starts (Architect) | P0/P1 ✓ |
-| Dual mode + Night/Day theme | P0 ✓ |
-| Build: chat + preview split, Generate phases | P0 ✓ |
-| Agents: cards (Builder) / graph (Architect) + inspector | P0 ✓ |
-| Ship: deploy success, URL, GitHub sync stub | P0 ✓ |
-| Import: Upload / GitHub / Studio / URL | P0 ✓ |
-| Blueprint editable PRD | P1 ✓ |
-| Code file tree + diffs (Architect) | P1 ✓ |
-| Data / Integrations stubs | OK ✓ |
-| Settings: profile, theme, default mode | P0 ✓ |
-| Seed project **Lead Nurture Crew** (live) | P0 ✓ |
+| Mock auth (email / Google / GitHub) | ✓ |
+| Home: intent composer, project grid, templates | ✓ |
+| Consultant (Builder) / Quick starts (Architect) | ✓ |
+| Dual mode + Night/Day theme | ✓ |
+| Build: chat + preview split, Generate phases | ✓ |
+| Agents: cards (Builder) / graph (Architect) + inspector | ✓ |
+| Ship: deploy success, URL copy, GitHub sync stub | ✓ |
+| Import: Upload / GitHub / Studio / URL | ✓ |
+| Blueprint editable PRD | ✓ |
+| Code file tree + content/diff tabs (Architect) | ✓ |
+| Data / Integrations stubs with CTAs | ✓ |
+| Settings: profile, theme, default mode | ✓ |
+| Seed project **Lead Nurture Crew** (live) | ✓ |
+| Keyboard: `⌘/Ctrl+Enter` send · `⌘/Ctrl+.` mode toggle | ✓ |
 
 ---
 
@@ -80,17 +83,17 @@ npm run build && npm start
 
 ---
 
-## Click-path for judges (≈90s)
+## Click-path for judges (≈90s) — Lyzr Submit
 
-1. **Login** → Continue with Google (or any email) → lands on `/home`.  
-2. Open seeded **Lead Nurture Crew** (Live badge) *or* type an intent / pick a Consultant idea.  
-3. **Build** — chat left, Stage preview right. Click **Generate** if preview empty.  
-4. **Agents** — select Copywriter, edit prompt / tools, Save. Toggle **Architect** mode to see the node graph.  
-5. **Blueprint** — skim/edit PRD sections. **Code** (Architect) — open a diff.  
-6. **Ship** — Deploy → copper LIVE URL `lead-nurture.architect.new` (or project slug).  
-7. Return **Home** — project shows Live. Try **Import** tab flow. Toggle **Night / Day** in header or Settings.
+1. **Login** → Continue with Google (or any email) → `/home`.  
+2. Open seeded **Lead Nurture Crew** (Live badge) *or* use “Open seed project” on Home.  
+3. **Build** — chat left, Stage preview right. Click **Generate** if needed; try **Run outreach**.  
+4. **Agents** — select Copywriter, edit prompt / tools, **Save changes**. Toggle **Architect** for the node graph.  
+5. **Blueprint** — skim/edit PRD. **Code** (Architect) — open a file + Diff tab.  
+6. **Ship** — Deploy → copper LIVE URL → **Copy URL**.  
+7. Return **Home** — project shows Live. Try **Import**. Toggle **Night / Day**.
 
-Keyboard: `⌘/Ctrl + Enter` sends intent from the home composer.
+Keyboard: `⌘/Ctrl + Enter` sends from home composer · `⌘/Ctrl + .` toggles Builder/Architect.
 
 ---
 
@@ -101,9 +104,9 @@ Keyboard: `⌘/Ctrl + Enter` sends intent from the home composer.
 | Home right rail | Consultant role → ideas + hrs saved | Import GitHub / Studio / empty scaffold |
 | Chat tone | Product coach | Staff eng framing |
 | Agents | Role cards | Absolute CSS graph + edges |
-| Code | Hidden empty-state nudge | File tree + diff drawer |
-| Ship | One-click Deploy | Env, custom domain, VPC, analytics toggles |
-| Preview | Device frame | + console/network stub |
+| Code | Hidden empty-state + switch CTA | File tree + content/diff |
+| Ship | One-click Deploy + copy URL | Env, custom domain, VPC, analytics |
+| Preview | Device frame + Run outreach | + console/network stub |
 
 Mode preference persists across refresh; switching never forks the project.
 
@@ -114,30 +117,12 @@ Mode preference persists across refresh; switching never forks the project.
 | Route | Purpose |
 |---|---|
 | `/` | Session redirect → `/home` or `/login` |
-| `/login` | Mock auth |
+| `/login` | Mock auth (split hero) |
 | `/home` | Workspace hub |
 | `/projects/new` | Intent / templates → seed crew |
 | `/projects/[id]?view=` | Studio: `build` \| `blueprint` \| `agents` \| `code` \| `ship` \| `data` \| `integrations` |
 | `/import` | Import wizard |
 | `/settings` | Profile, theme, default mode |
-
----
-
-## Repo
-
-Intended remote: `https://github.com/shivamATpaytm/Architect-2.0`
-
-Push from this machine when ready (do not force-push):
-
-```bash
-cd /workspace/Architect-2.0
-git init
-git add .
-git commit -m "Architect 2.0 demo: dual-mode studio for Lyzr take-home"
-git remote add origin https://github.com/shivamATpaytm/Architect-2.0.git
-git branch -M main
-git push -u origin main
-```
 
 ---
 

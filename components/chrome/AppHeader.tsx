@@ -15,43 +15,43 @@ export function AppHeader({
   deployHref?: string;
   onDeploy?: () => void;
 }) {
-  const { session, logout } = useApp();
+  const { session, logout, prefs } = useApp();
   const pathname = usePathname();
   const router = useRouter();
   const inStudio = pathname?.startsWith("/projects/");
 
   return (
     <header
-      className="flex items-center justify-between gap-4 px-4 py-2.5 border-b"
+      className="flex items-center justify-between gap-3 px-4 h-12 border-b shrink-0"
       style={{ borderColor: "var(--border)", background: "var(--surface)" }}
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-2.5 min-w-0">
         <Link href="/home" className="flex items-center gap-2 shrink-0">
-          <span
-            className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] text-xs font-bold"
-            style={{ background: "var(--accent)", color: "#f7fff9" }}
-          >
-            A2
-          </span>
-          <span className="display text-[17px] font-semibold tracking-tight">
+          <span className="logo-mark">A2</span>
+          <span className="display text-[16px] font-semibold tracking-tight hidden sm:inline">
             Architect
           </span>
         </Link>
         {projectName && (
           <>
-            <span style={{ color: "var(--ink-muted)" }}>/</span>
-            <span className="truncate font-medium">{projectName}</span>
+            <span className="text-sm" style={{ color: "var(--ink-faint)" }}>
+              /
+            </span>
+            <span className="truncate text-sm font-semibold">{projectName}</span>
+            <span className="chip hidden md:inline-flex">
+              {prefs.mode === "builder" ? "Builder lens" : "Architect lens"}
+            </span>
           </>
         )}
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 shrink-0">
         {!inStudio && (
           <>
-            <Link href="/import" className="btn btn-ghost">
+            <Link href="/import" className="btn btn-ghost btn-sm">
               Import
             </Link>
-            <Link href="/projects/new" className="btn btn-primary">
+            <Link href="/projects/new" className="btn btn-primary btn-sm">
               New project
             </Link>
           </>
@@ -61,7 +61,7 @@ export function AppHeader({
         {(deployHref || onDeploy) && (
           <button
             type="button"
-            className="btn btn-signal"
+            className="btn btn-signal btn-sm"
             onClick={() => {
               if (onDeploy) onDeploy();
               else if (deployHref) router.push(deployHref);
@@ -70,18 +70,18 @@ export function AppHeader({
             Deploy
           </button>
         )}
-        <Link href="/settings" className="btn btn-ghost" title="Settings">
+        <Link href="/settings" className="avatar" title="Settings">
           {session?.name?.slice(0, 1).toUpperCase() || "U"}
         </Link>
         <button
           type="button"
-          className="btn btn-ghost"
+          className="btn btn-ghost btn-sm"
           onClick={() => {
             logout();
             router.push("/login");
           }}
         >
-          Out
+          Sign out
         </button>
       </div>
     </header>

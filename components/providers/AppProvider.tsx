@@ -68,6 +68,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [prefs.theme, ready]);
 
   useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === ".") {
+        e.preventDefault();
+        setPrefs((prev) => {
+          const mode: Mode = prev.mode === "builder" ? "architect" : "builder";
+          const next = { ...prev, mode };
+          savePrefs(next);
+          return next;
+        });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 2800);
     return () => clearTimeout(t);

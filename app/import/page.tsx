@@ -12,8 +12,8 @@ export default function ImportPage() {
         <AppHeader />
         <main className="flex-1 p-6">
           <div className="max-w-xl mx-auto mb-5">
-            <h1 className="display text-3xl m-0">Import</h1>
-            <p className="mt-1" style={{ color: "var(--ink-muted)" }}>
+            <h1 className="display text-[32px] m-0">Import</h1>
+            <p className="mt-1 mb-0" style={{ color: "var(--ink-muted)" }}>
               Bring an existing project, Studio agent, repo, or URL into Architect.
             </p>
           </div>

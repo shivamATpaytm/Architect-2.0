@@ -18,21 +18,23 @@ export function IntentComposer() {
   };
 
   return (
-    <div className="card p-5">
-      <div className="flex items-baseline justify-between gap-3 mb-3">
-        <h2 className="display text-2xl m-0">
+    <div className="card p-6" style={{ boxShadow: "var(--shadow)" }}>
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <h2 className="display text-[26px] m-0 leading-tight">
           {prefs.mode === "builder"
             ? "What should your crew accomplish?"
             : "Describe the agentic system to scaffold"}
         </h2>
+        <span className="chip mono shrink-0">⌘↵</span>
       </div>
       <p className="mt-0 mb-4 text-sm" style={{ color: "var(--ink-muted)" }}>
         {prefs.mode === "builder"
-          ? "Plain language is enough — Architect will propose a Blueprint and Crew."
+          ? "Plain language is enough — Architect proposes a Blueprint and Crew, then opens Stage."
           : "Mention frameworks, tools, and deploy targets if you already know them."}
       </p>
       <textarea
         className="textarea"
+        style={{ minHeight: 128, fontSize: 15 }}
         placeholder={
           prefs.mode === "builder"
             ? "e.g. Research inbound leads, draft personalized emails, QA tone, log to HubSpot…"
@@ -44,17 +46,16 @@ export function IntentComposer() {
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submit();
         }}
       />
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button type="button" className="btn btn-primary" onClick={submit}>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button type="button" className="btn btn-primary" onClick={submit} disabled={!intent.trim()}>
           Start building
         </button>
         <Link href="/import" className="btn">
-          Import
+          Import project
         </Link>
         <Link href="/projects/new" className="btn btn-ghost">
-          Templates
+          Browse templates
         </Link>
-        <span className="chip mono">⌘ Enter</span>
       </div>
     </div>
   );

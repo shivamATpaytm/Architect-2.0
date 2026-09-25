@@ -3,10 +3,10 @@
 import Link from "next/link";
 import type { StudioView } from "@/lib/types";
 
-const NAV: { view: StudioView; label: string; badge?: number }[] = [
+const NAV: { view: StudioView; label: string }[] = [
   { view: "build", label: "Build" },
   { view: "blueprint", label: "Blueprint" },
-  { view: "agents", label: "Agents", badge: 4 },
+  { view: "agents", label: "Agents" },
   { view: "code", label: "Code" },
   { view: "ship", label: "Ship" },
 ];
@@ -27,8 +27,8 @@ export function StudioNav({
 }) {
   return (
     <nav
-      className="flex items-center gap-1 px-3 py-2 border-b overflow-x-auto"
-      style={{ borderColor: "var(--border)", background: "var(--bg)" }}
+      className="flex items-end gap-0.5 px-3 pt-1 border-b overflow-x-auto"
+      style={{ borderColor: "var(--border)", background: "var(--bg-elevated)" }}
       aria-label="Studio views"
     >
       {NAV.map((item) => {
@@ -38,26 +38,19 @@ export function StudioNav({
           <Link
             key={item.view}
             href={`/projects/${projectId}?view=${item.view}`}
-            className="btn"
-            style={{
-              background: active ? "var(--accent-soft)" : "transparent",
-              borderColor: active ? "transparent" : "transparent",
-              color: active ? "var(--accent)" : "var(--ink-muted)",
-              fontWeight: active ? 600 : 450,
-              padding: "0.4rem 0.75rem",
-            }}
+            className={`studio-tab ${active ? "active" : ""}`}
           >
             {item.label}
             {typeof badge === "number" && badge > 0 && (
-              <span className="chip chip-accent" style={{ marginLeft: 4 }}>
+              <span className="chip chip-accent" style={{ padding: "0.05rem 0.4rem" }}>
                 {badge}
               </span>
             )}
           </Link>
         );
       })}
-      <span className="mx-1" style={{ color: "var(--border-strong)" }}>
-        |
+      <span className="mx-2 self-center" style={{ color: "var(--border-strong)", fontSize: 12 }}>
+        ·
       </span>
       {EXTRA.map((item) => {
         const active = view === item.view;
@@ -65,11 +58,8 @@ export function StudioNav({
           <Link
             key={item.view}
             href={`/projects/${projectId}?view=${item.view}`}
-            className="btn btn-ghost"
-            style={{
-              color: active ? "var(--accent)" : "var(--ink-muted)",
-              fontWeight: active ? 600 : 400,
-            }}
+            className={`studio-tab ${active ? "active" : ""}`}
+            style={{ fontSize: 12.5, opacity: active ? 1 : 0.75 }}
           >
             {item.label}
           </Link>

@@ -15,9 +15,14 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (!ready) {
     return (
       <div className="blueprint-grid min-h-screen flex items-center justify-center">
-        <p className="mono text-sm" style={{ color: "var(--ink-muted)" }}>
-          Loading workspace…
-        </p>
+        <div className="text-center">
+          <div className="logo-mark mx-auto mb-3" style={{ width: 36, height: 36, fontSize: 13 }}>
+            A2
+          </div>
+          <p className="mono text-sm m-0" style={{ color: "var(--ink-muted)" }}>
+            Loading workspace…
+          </p>
+        </div>
       </div>
     );
   }

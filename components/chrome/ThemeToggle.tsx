@@ -8,12 +8,12 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      className="btn btn-ghost"
+      className="btn btn-ghost btn-sm"
       onClick={() => setTheme(next)}
       title={`Switch to ${next}`}
       aria-label={`Theme: ${prefs.theme}`}
     >
-      {prefs.theme === "night" ? "Night" : "Day"}
+      {prefs.theme === "night" ? "☾ Night" : "☀ Day"}
     </button>
   );
 }
