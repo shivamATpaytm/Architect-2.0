@@ -1,6 +1,6 @@
 export type Mode = "builder" | "architect";
 export type Theme = "night" | "day";
-export type ProjectStatus = "draft" | "building" | "live";
+export type ProjectStatus = "queued" | "building" | "ready" | "live" | "failed";
 export type Phase = "consulting" | "blueprint" | "crew" | "stage";
 export type StudioView =
   | "build"
@@ -53,6 +53,45 @@ export interface CodeFile {
   diff?: string;
 }
 
+export interface DataAsset {
+  id: string;
+  name: string;
+  kind: "pdf" | "csv" | "other";
+  sizeLabel: string;
+  addedAt: string;
+}
+
+export interface IntegrationConnector {
+  id: string;
+  name: string;
+  blurb: string;
+  connected: boolean;
+  permissions: string;
+}
+
+export interface PullRequestStub {
+  number: number;
+  title: string;
+  url: string;
+  createdAt: string;
+}
+
+export interface BuildProgress {
+  state: "queued" | "building" | "ready" | "failed";
+  stepLabel: string;
+  etaLabel: string;
+  startedAt: string;
+  percent: number;
+}
+
+export interface OutreachRun {
+  status: "idle" | "queued" | "running" | "done" | "fail";
+  startedAt?: string;
+  finishedAt?: string;
+  counts: { leads: number; drafts: number; crm: number };
+  logs: string[];
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -67,6 +106,11 @@ export interface Project {
   chat: ChatMessage[];
   blueprint: BlueprintSection[];
   files: CodeFile[];
+  dataAssets: DataAsset[];
+  integrations: IntegrationConnector[];
+  pullRequests: PullRequestStub[];
+  buildProgress?: BuildProgress;
+  outreach?: OutreachRun;
   githubConnected: boolean;
   githubRepo?: string;
   lastSync?: string;

@@ -1,6 +1,37 @@
-import type { Project } from "../types";
+import type { IntegrationConnector, Project } from "../types";
 
 export const LEAD_NURTURE_ID = "proj-lead-nurture";
+
+export const DEFAULT_INTEGRATIONS: IntegrationConnector[] = [
+  {
+    id: "gmail",
+    name: "Gmail",
+    blurb: "Send and draft outreach emails from the Copywriter agent.",
+    connected: true,
+    permissions: "Read drafts · Send on approve · Labels",
+  },
+  {
+    id: "hubspot",
+    name: "HubSpot",
+    blurb: "Log CRM notes and sync lead status after QA.",
+    connected: true,
+    permissions: "Contacts read/write · Notes · Timeline",
+  },
+  {
+    id: "slack",
+    name: "Slack",
+    blurb: "Notify the team when drafts are ready for review.",
+    connected: false,
+    permissions: "Post to channels · Read mentions",
+  },
+  {
+    id: "web-search",
+    name: "Web search",
+    blurb: "Research firmographics and recent news for personalization.",
+    connected: true,
+    permissions: "Query public web · Cache results 24h",
+  },
+];
 
 export function createLeadNurtureProject(): Project {
   const now = new Date().toISOString();
@@ -18,6 +49,43 @@ export function createLeadNurtureProject(): Project {
     githubConnected: true,
     githubRepo: "acme/lead-nurture-crew",
     lastSync: new Date(Date.now() - 1000 * 60 * 42).toISOString(),
+    buildProgress: {
+      state: "ready",
+      stepLabel: "Live on Stage",
+      etaLabel: "Done",
+      startedAt: now,
+      percent: 100,
+    },
+    outreach: {
+      status: "idle",
+      counts: { leads: 128, drafts: 34, crm: 19 },
+      logs: [],
+    },
+    dataAssets: [
+      {
+        id: "asset-icp",
+        name: "icp-guide.pdf",
+        kind: "pdf",
+        sizeLabel: "248 KB",
+        addedAt: now,
+      },
+      {
+        id: "asset-pricing",
+        name: "pricing.csv",
+        kind: "csv",
+        sizeLabel: "12 KB",
+        addedAt: now,
+      },
+    ],
+    integrations: DEFAULT_INTEGRATIONS.map((c) => ({ ...c })),
+    pullRequests: [
+      {
+        number: 12,
+        title: "Wire Brand QA scoring + HubSpot note stub",
+        url: "https://github.com/acme/lead-nurture-crew/pull/12",
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
+      },
+    ],
     agents: [
       {
         id: "agent-researcher",

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useApp } from "@/components/providers/AppProvider";
 
 export default function LoginPage() {
@@ -30,10 +31,17 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      <aside className="login-hero blueprint-grid hidden lg:flex flex-col justify-between p-10 border-r" style={{ borderColor: "var(--border)" }}>
+      <aside
+        className="login-hero blueprint-grid hidden lg:flex flex-col justify-between p-10 border-r"
+        style={{ borderColor: "var(--border)" }}
+      >
         <div className="flex items-center gap-2.5">
-          <span className="logo-mark" style={{ width: 36, height: 36, fontSize: 13 }}>A2</span>
-          <span className="display text-2xl">Architect 2.0</span>
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="logo-mark" style={{ width: 36, height: 36, fontSize: 13 }}>
+              A2
+            </span>
+            <span className="display text-2xl">Architect 2.0</span>
+          </Link>
         </div>
         <div className="max-w-md">
           <p className="display text-4xl leading-tight m-0 mb-4">
@@ -53,7 +61,9 @@ export default function LoginPage() {
             ].map(([t, d]) => (
               <div key={t} className="card p-3.5">
                 <div className="font-semibold text-sm">{t}</div>
-                <div className="text-xs mt-0.5" style={{ color: "var(--ink-muted)" }}>{d}</div>
+                <div className="text-xs mt-0.5" style={{ color: "var(--ink-muted)" }}>
+                  {d}
+                </div>
               </div>
             ))}
           </div>
@@ -71,7 +81,10 @@ export default function LoginPage() {
             <span className="logo-mark">A2</span>
             <span className="display text-xl">Architect 2.0</span>
           </div>
-          <h1 className="display text-2xl m-0 mb-1">Welcome back</h1>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <h1 className="display text-2xl m-0">Welcome back</h1>
+            <span className="chip chip-accent">Demo</span>
+          </div>
           <p className="mt-0 mb-6 text-sm" style={{ color: "var(--ink-muted)" }}>
             Build agentic apps from intent. Inspect the wiring when you need to.
           </p>
@@ -102,22 +115,30 @@ export default function LoginPage() {
 
           <div className="flex items-center gap-2 my-4">
             <hr className="divider flex-1" />
-            <span className="text-xs" style={{ color: "var(--ink-faint)" }}>or</span>
+            <span className="text-xs" style={{ color: "var(--ink-faint)" }}>
+              or
+            </span>
             <hr className="divider flex-1" />
           </div>
 
           <div className="flex flex-col gap-2">
-            <button type="button" className="btn w-full" disabled={busy} onClick={() => go("google", "maya@northwind.dev")}>
+            <button
+              type="button"
+              className="btn w-full"
+              disabled={busy}
+              onClick={() => go("google", "maya@northwind.dev")}
+            >
               Continue with Google
             </button>
-            <button type="button" className="btn w-full" disabled={busy} onClick={() => go("github", "dev@github.com")}>
+            <button
+              type="button"
+              className="btn w-full"
+              disabled={busy}
+              onClick={() => go("github", "dev@github.com")}
+            >
               Continue with GitHub
             </button>
           </div>
-
-          <p className="text-center text-xs mt-6 mb-0" style={{ color: "var(--ink-faint)" }}>
-            Mock auth for Lyzr take-home — no real OAuth or secrets.
-          </p>
         </div>
       </main>
     </div>

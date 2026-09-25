@@ -16,7 +16,6 @@ export function AgentCanvas({ project }: { project: Project }) {
     updateProject(project.id, {
       agents: project.agents.map((a) => (a.id === next.id ? next : a)),
     });
-    showToast(`Saved ${next.name}`);
   };
 
   if (prefs.mode === "builder") {
@@ -68,8 +67,10 @@ export function AgentCanvas({ project }: { project: Project }) {
         </div>
         <AgentInspector
           agent={active}
+          projectId={project.id}
           onChange={saveAgent}
-          onStudio={() => showToast("Open in Studio — coming soon (demo)")}
+          onStudio={() => showToast("Studio opened (demo)")}
+          onToast={showToast}
         />
       </div>
     );
@@ -127,8 +128,10 @@ export function AgentCanvas({ project }: { project: Project }) {
       </div>
       <AgentInspector
         agent={active}
+        projectId={project.id}
         onChange={saveAgent}
-        onStudio={() => showToast("Open in Studio — coming soon (demo)")}
+        onStudio={() => showToast("Studio opened (demo)")}
+        onToast={showToast}
       />
     </div>
   );

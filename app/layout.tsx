@@ -24,7 +24,13 @@ const newsreader = Newsreader({
 export const metadata: Metadata = {
   title: "Architect 2.0 — Design systems of agents. Ship the app.",
   description:
-    "Dual-mode vibe-coding platform for Builders and Architects. Lyzr hiring take-home demo.",
+    "Dual-mode vibe-coding platform for Builders and Architects.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+  },
 };
 
 export default function RootLayout({

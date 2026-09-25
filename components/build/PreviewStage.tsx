@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Project } from "@/lib/types";
 import { useApp } from "@/components/providers/AppProvider";
@@ -8,12 +8,132 @@ import { useApp } from "@/components/providers/AppProvider";
 type Device = "desktop" | "tablet" | "mobile";
 
 export function PreviewStage({ project }: { project: Project }) {
-  const { prefs, showToast } = useApp();
+  const { prefs, showToast, updateProject } = useApp();
   const router = useRouter();
   const [device, setDevice] = useState<Device>("desktop");
   const [tweak, setTweak] = useState(false);
-  const [ran, setRan] = useState(false);
+  const runningRef = useRef(false);
   const width = device === "mobile" ? 360 : device === "tablet" ? 768 : "100%";
+  const outreach = project.outreach ?? {
+    status: "idle" as const,
+    counts: { leads: 128, drafts: 34, crm: 19 },
+    logs: [] as string[],
+  };
+
+  const runOutreach = async () => {
+    if (runningRef.current) return;
+    if (outreach.status === "queued" || outreach.status === "running") return;
+    runningRef.current = true;
+
+    const base = outreach.counts;
+    const startLogs = [`[${ts()}] QUEUED outreach batch`];
+    updateProject(project.id, {
+      outreach: {
+        status: "queued",
+        startedAt: new Date().toISOString(),
+        counts: base,
+        logs: startLogs,
+      },
+    });
+    showToast("Outreach queued");
+
+    await wait(600);
+    updateProject(project.id, {
+      outreach: {
+        status: "running",
+        startedAt: new Date().toISOString(),
+        counts: { ...base, leads: Math.max(0, base.leads - 3) },
+        logs: [
+          ...startLogs,
+          `[${ts()}] RUNNING researcher · scanning ICP`,
+          `[${ts()}] POST /api/outreach 201`,
+        ],
+      },
+      agents: project.agents.map((a) =>
+        a.id === "agent-researcher" ? { ...a, status: "running" as const } : a
+      ),
+    });
+
+    await wait(900);
+    updateProject(project.id, {
+      outreach: {
+        status: "running",
+        startedAt: new Date().toISOString(),
+        counts: {
+          leads: Math.max(0, base.leads - 3),
+          drafts: base.drafts + 3,
+          crm: base.crm + 1,
+        },
+        logs: [
+          ...startLogs,
+          `[${ts()}] RUNNING researcher · scanning ICP`,
+          `[${ts()}] POST /api/outreach 201`,
+          `[${ts()}] Copywriter drafted 3 emails`,
+          `[${ts()}] Brand QA scored · 2 pass / 1 revise`,
+        ],
+      },
+      agents: project.agents.map((a) => {
+        if (a.id === "agent-researcher") return { ...a, status: "ready" as const };
+        if (a.id === "agent-copywriter" || a.id === "agent-brand-qa")
+          return { ...a, status: "running" as const };
+        return a;
+      }),
+    });
+
+    await wait(800);
+    const fail = Math.random() < 0.08;
+    if (fail) {
+      updateProject(project.id, {
+        outreach: {
+          status: "fail",
+          startedAt: new Date().toISOString(),
+          finishedAt: new Date().toISOString(),
+          counts: {
+            leads: Math.max(0, base.leads - 3),
+            drafts: base.drafts + 1,
+            crm: base.crm,
+          },
+          logs: [
+            ...startLogs,
+            `[${ts()}] RUNNING researcher · scanning ICP`,
+            `[${ts()}] POST /api/outreach 201`,
+            `[${ts()}] FAIL HubSpot rate limit — retry later`,
+          ],
+        },
+        agents: project.agents.map((a) =>
+          a.id.startsWith("agent-") ? { ...a, status: "ready" as const } : a
+        ),
+      });
+      showToast("Outreach failed — HubSpot rate limit");
+    } else {
+      updateProject(project.id, {
+        outreach: {
+          status: "done",
+          startedAt: new Date().toISOString(),
+          finishedAt: new Date().toISOString(),
+          counts: {
+            leads: Math.max(0, base.leads - 3),
+            drafts: base.drafts + 3,
+            crm: base.crm + 3,
+          },
+          logs: [
+            ...startLogs,
+            `[${ts()}] RUNNING researcher · scanning ICP`,
+            `[${ts()}] POST /api/outreach 201`,
+            `[${ts()}] Copywriter drafted 3 emails`,
+            `[${ts()}] Brand QA scored · 2 pass / 1 revise`,
+            `[${ts()}] CRM Writer logged 3 notes`,
+            `[${ts()}] DONE outreach batch`,
+          ],
+        },
+        agents: project.agents.map((a) =>
+          a.id.startsWith("agent-") ? { ...a, status: "ready" as const } : a
+        ),
+      });
+      showToast("Outreach complete — 3 drafts ready");
+    }
+    runningRef.current = false;
+  };
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -38,10 +158,18 @@ export function PreviewStage({ project }: { project: Project }) {
               </button>
             ))}
           </div>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => showToast("Preview refreshed")}>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => showToast("Preview refreshed")}
+          >
             Refresh
           </button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setTweak((v) => !v)}>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => setTweak((v) => !v)}
+          >
             Visual tweak
           </button>
           <button
@@ -77,37 +205,73 @@ export function PreviewStage({ project }: { project: Project }) {
           </div>
 
           {project.previewReady ? (
-            <LeadNurtureMock
-              ran={ran}
-              onRun={() => {
-                setRan(true);
-                showToast("Outreach crew running — 3 drafts queued");
-              }}
-            />
+            <LeadNurtureMock outreach={outreach} onRun={runOutreach} />
           ) : (
             <div className="sketch-empty m-5">
               <p className="display text-xl m-0 mb-1">Stage is empty</p>
               <p className="m-0 text-sm mb-3">
-                Run <strong>Generate</strong> in chat to populate the preview.
+                {project.buildProgress
+                  ? `${project.buildProgress.stepLabel} · ${project.buildProgress.etaLabel}`
+                  : "Run Generate in chat to populate the preview."}
               </p>
+              {project.buildProgress && (
+                <div
+                  className="mx-auto max-w-xs h-1.5 rounded-full overflow-hidden mb-3"
+                  style={{ background: "var(--surface-3)" }}
+                >
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${project.buildProgress.percent}%`,
+                      background: "var(--accent)",
+                    }}
+                  />
+                </div>
+              )}
               <p className="m-0 text-xs mono" style={{ color: "var(--ink-faint)" }}>
-                Consulting → Blueprint → Crew → Stage
+                Queued → Building → Ready
               </p>
             </div>
           )}
         </div>
 
-        {prefs.mode === "architect" && project.previewReady && (
-          <div className="card mt-3 p-3 mono text-[11px] fade-in" style={{ color: "var(--ink-muted)" }}>
-            <div className="flex justify-between mb-1">
-              <span>console · network</span>
-              <span style={{ color: "var(--ok)" }}>0 errors</span>
+        {(prefs.mode === "architect" || (outreach.logs && outreach.logs.length > 0)) &&
+          project.previewReady && (
+            <div
+              className="card mt-3 p-3 mono text-[11px] fade-in"
+              style={{ color: "var(--ink-muted)" }}
+            >
+              <div className="flex justify-between mb-1">
+                <span>console · network</span>
+                <span
+                  style={{
+                    color:
+                      outreach.status === "fail"
+                        ? "var(--danger)"
+                        : outreach.status === "done"
+                          ? "var(--ok)"
+                          : "var(--ink-muted)",
+                  }}
+                >
+                  {outreach.status === "fail"
+                    ? "1 error"
+                    : outreach.status === "running" || outreach.status === "queued"
+                      ? "live"
+                      : "0 errors"}
+                </span>
+              </div>
+              {(outreach.logs.length
+                ? outreach.logs
+                : [
+                    "GET /api/leads 200 · 42ms",
+                    "POST /api/outreach 201 · 118ms",
+                    "WS /agents/stream connected",
+                  ]
+              ).map((line, i) => (
+                <div key={i}>{line}</div>
+              ))}
             </div>
-            <div>GET /api/leads 200 · 42ms</div>
-            <div>POST /api/outreach 201 · 118ms</div>
-            <div>WS /agents/stream connected</div>
-          </div>
-        )}
+          )}
       </div>
 
       {tweak && (
@@ -117,14 +281,19 @@ export function PreviewStage({ project }: { project: Project }) {
         >
           <div className="flex flex-wrap gap-2 items-center">
             <span className="text-sm font-semibold">Visual tweak</span>
-            <button type="button" className="chip" onClick={() => showToast("Accent → sage applied")}>
+            <button
+              type="button"
+              className="chip"
+              onClick={() => showToast("Accent → sage applied")}
+            >
               Accent sage
             </button>
-            <button type="button" className="chip" onClick={() => showToast("Density → compact")}>
+            <button
+              type="button"
+              className="chip"
+              onClick={() => showToast("Density → compact")}
+            >
               Compact
-            </button>
-            <button type="button" className="chip" onClick={() => showToast("Type → Newsreader headings")}>
-              Display type
             </button>
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => setTweak(false)}>
               Close
@@ -136,7 +305,25 @@ export function PreviewStage({ project }: { project: Project }) {
   );
 }
 
-function LeadNurtureMock({ ran, onRun }: { ran: boolean; onRun: () => void }) {
+function LeadNurtureMock({
+  outreach,
+  onRun,
+}: {
+  outreach: NonNullable<Project["outreach"]>;
+  onRun: () => void;
+}) {
+  const busy = outreach.status === "queued" || outreach.status === "running";
+  const statusLabel =
+    outreach.status === "queued"
+      ? "Queued…"
+      : outreach.status === "running"
+        ? "Running…"
+        : outreach.status === "done"
+          ? "Run again"
+          : outreach.status === "fail"
+            ? "Retry outreach"
+            : "Run outreach";
+
   return (
     <div className="p-5" style={{ background: "var(--bg)" }}>
       <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
@@ -147,25 +334,43 @@ function LeadNurtureMock({ ran, onRun }: { ran: boolean; onRun: () => void }) {
             Research → draft → QA → CRM
           </p>
         </div>
-        <button type="button" className="btn btn-signal" onClick={onRun}>
-          {ran ? "Run again" : "Run outreach"}
+        <button type="button" className="btn btn-signal" onClick={onRun} disabled={busy}>
+          {statusLabel}
         </button>
       </div>
 
-      {ran && (
+      {busy && (
         <div
           className="mb-4 px-3 py-2 rounded-lg text-sm fade-in"
           style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
         >
-          Crew running — Researcher finished · Copywriter drafting · Brand QA queued
+          {outreach.status === "queued"
+            ? "Queued — waiting for crew slot…"
+            : "Crew running — Researcher → Copywriter → Brand QA → CRM"}
+        </div>
+      )}
+      {outreach.status === "done" && (
+        <div
+          className="mb-4 px-3 py-2 rounded-lg text-sm fade-in"
+          style={{ background: "var(--accent-soft)", color: "var(--ok)" }}
+        >
+          Done — drafts updated · CRM notes logged
+        </div>
+      )}
+      {outreach.status === "fail" && (
+        <div
+          className="mb-4 px-3 py-2 rounded-lg text-sm fade-in"
+          style={{ background: "var(--signal-soft)", color: "var(--danger)" }}
+        >
+          Failed — connector error. Retry when ready.
         </div>
       )}
 
       <div className="grid gap-3 sm:grid-cols-3 mb-4">
         {[
-          ["Leads queued", ran ? "125" : "128"],
-          ["Drafts ready", ran ? "37" : "34"],
-          ["CRM notes", ran ? "22" : "19"],
+          ["Leads queued", String(outreach.counts.leads)],
+          ["Drafts ready", String(outreach.counts.drafts)],
+          ["CRM notes", String(outreach.counts.crm)],
         ].map(([label, val]) => (
           <div key={label} className="card p-3.5">
             <div className="text-xs" style={{ color: "var(--ink-muted)" }}>
@@ -187,14 +392,32 @@ function LeadNurtureMock({ ran, onRun }: { ran: boolean; onRun: () => void }) {
           </thead>
           <tbody>
             {[
-              ["Maya Chen · Northwind", ran ? "Sending" : "QA pass", "Series B + hiring SDRs"],
-              ["Omar Patel · Cobalt", "Drafting", "Opened pricing page 3×"],
-              ["Iris Ng · Lattice", "Researched", "Spoke at RevSummit"],
+              [
+                "Maya Chen · Northwind",
+                outreach.status === "done"
+                  ? "Sending"
+                  : outreach.status === "running"
+                    ? "Researching"
+                    : "QA pass",
+                "Series B + hiring SDRs",
+              ],
+              [
+                "Omar Patel · Cobalt",
+                outreach.status === "done" ? "Draft ready" : "Drafting",
+                "Opened pricing page 3×",
+              ],
+              [
+                "Iris Ng · Lattice",
+                outreach.status === "running" ? "Queued" : "Researched",
+                "Spoke at RevSummit",
+              ],
             ].map((row) => (
               <tr key={row[0]} style={{ borderTop: "1px solid var(--border)" }}>
                 <td className="p-2.5 font-medium">{row[0]}</td>
                 <td className="p-2.5">
-                  <span className={`chip ${row[1] === "Sending" ? "chip-signal" : "chip-accent"}`}>
+                  <span
+                    className={`chip ${row[1] === "Sending" || row[1] === "Draft ready" ? "chip-signal" : "chip-accent"}`}
+                  >
                     {row[1]}
                   </span>
                 </td>
@@ -210,6 +433,17 @@ function LeadNurtureMock({ ran, onRun }: { ran: boolean; onRun: () => void }) {
   );
 }
 
+function wait(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+function ts() {
+  return new Date().toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+}
 function slug(name: string) {
   return name
     .toLowerCase()

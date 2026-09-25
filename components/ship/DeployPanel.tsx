@@ -17,8 +17,13 @@ export function DeployPanel({ project }: { project: Project }) {
   const [confetti, setConfetti] = useState(false);
   const [ghConnected, setGhConnected] = useState(project.githubConnected);
   const [copied, setCopied] = useState(false);
+  const [deploying, setDeploying] = useState(false);
 
-  const deploy = () => {
+  const deploy = async () => {
+    if (deploying) return;
+    setDeploying(true);
+    showToast("Deploy queued…");
+    await new Promise((r) => setTimeout(r, 500));
     const url = domain || `${slug(project.name)}.architect.new`;
     updateProject(project.id, {
       status: "live",
@@ -26,11 +31,36 @@ export function DeployPanel({ project }: { project: Project }) {
       phase: "stage",
       previewReady: true,
       githubConnected: ghConnected,
+      buildProgress: {
+        state: "ready",
+        stepLabel: "Live on Stage",
+        etaLabel: "Done",
+        startedAt: new Date().toISOString(),
+        percent: 100,
+      },
     });
     setProd(true);
     setConfetti(true);
-    showToast(`Deployed · ${url}`);
+    showToast(`Live · ${url}`);
     setTimeout(() => setConfetti(false), 1300);
+    setDeploying(false);
+  };
+
+  const openPR = () => {
+    const number =
+      (project.pullRequests?.reduce((m, pr) => Math.max(m, pr.number), 0) || 11) + 1;
+    const repo = project.githubRepo || "acme/" + slug(project.name);
+    const pr = {
+      number,
+      title: `chore: sync Architect crew · ${new Date().toLocaleDateString("en-IN")}`,
+      url: `https://github.com/${repo}/pull/${number}`,
+      createdAt: new Date().toISOString(),
+    };
+    updateProject(project.id, {
+      pullRequests: [pr, ...(project.pullRequests || [])],
+      lastSync: new Date().toISOString(),
+    });
+    showToast(`Opened PR #${number}`);
   };
 
   const copyUrl = async () => {
@@ -55,7 +85,7 @@ export function DeployPanel({ project }: { project: Project }) {
             <p className="text-sm mt-1 mb-0" style={{ color: "var(--ink-muted)" }}>
               {prefs.mode === "builder"
                 ? "One-click publish to *.architect.new — share the live Stage URL."
-                : "Env, domain, GitHub branch, and VPC toggles (UI only for this demo)."}
+                : "Env, domain, GitHub branch, and VPC toggles. Demo deploy simulation."}
             </p>
           </div>
           {project.status === "live" && project.deployUrl && (
@@ -63,21 +93,27 @@ export function DeployPanel({ project }: { project: Project }) {
           )}
         </div>
 
-        <div className={`grid gap-4 ${prefs.mode === "architect" ? "lg:grid-cols-2" : "max-w-xl"}`}>
+        <div
+          className={`grid gap-4 ${prefs.mode === "architect" ? "lg:grid-cols-2" : "max-w-xl"}`}
+        >
           <div className="space-y-4">
             <div className="card p-4 space-y-3">
               <h3 className="m-0 label-caps">Environments</h3>
               <label className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium">Preview</div>
-                  <div className="text-xs" style={{ color: "var(--ink-muted)" }}>Always on for Stage</div>
+                  <div className="text-xs" style={{ color: "var(--ink-muted)" }}>
+                    Always on for Stage
+                  </div>
                 </div>
                 <span className="chip chip-accent">On</span>
               </label>
               <label className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium">Production</div>
-                  <div className="text-xs" style={{ color: "var(--ink-muted)" }}>Public *.architect.new</div>
+                  <div className="text-xs" style={{ color: "var(--ink-muted)" }}>
+                    Public *.architect.new
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -90,7 +126,11 @@ export function DeployPanel({ project }: { project: Project }) {
 
             <div className="card p-4 space-y-3">
               <h3 className="m-0 label-caps">Domain</h3>
-              <input className="input mono" value={domain} onChange={(e) => setDomain(e.target.value)} />
+              <input
+                className="input mono"
+                value={domain}
+                onChange={(e) => setDomain(e.target.value)}
+              />
               {prefs.mode === "architect" && (
                 <input
                   className="input"
@@ -102,8 +142,17 @@ export function DeployPanel({ project }: { project: Project }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button type="button" className="btn btn-signal" onClick={deploy}>
-                {project.status === "live" ? "Redeploy" : "Deploy"}
+              <button
+                type="button"
+                className="btn btn-signal"
+                onClick={deploy}
+                disabled={deploying}
+              >
+                {deploying
+                  ? "Deploying…"
+                  : project.status === "live"
+                    ? "Redeploy"
+                    : "Deploy"}
               </button>
               {(project.deployUrl || domain) && (
                 <>
@@ -126,7 +175,10 @@ export function DeployPanel({ project }: { project: Project }) {
 
           <div className="space-y-4">
             <div className="card p-4 space-y-3">
-              <h3 className="m-0 label-caps">GitHub</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="m-0 label-caps">GitHub</h3>
+                <span className="chip">Demo</span>
+              </div>
               {!ghConnected ? (
                 <button
                   type="button"
@@ -138,7 +190,7 @@ export function DeployPanel({ project }: { project: Project }) {
                       githubRepo: "acme/" + slug(project.name),
                       lastSync: new Date().toISOString(),
                     });
-                    showToast("GitHub connected (mock)");
+                    showToast("GitHub connected");
                   }}
                 >
                   Connect GitHub
@@ -159,14 +211,16 @@ export function DeployPanel({ project }: { project: Project }) {
                   <div className="flex flex-wrap gap-2">
                     <span className="chip chip-accent">Architect → GitHub</span>
                     <span className="chip">2-way</span>
-                    <button type="button" className="btn btn-sm" onClick={() => showToast("PR opened (mock)")}>
+                    <button type="button" className="btn btn-sm" onClick={openPR}>
                       Open PR
                     </button>
                     <button
                       type="button"
                       className="btn btn-sm"
                       onClick={() => {
-                        updateProject(project.id, { lastSync: new Date().toISOString() });
+                        updateProject(project.id, {
+                          lastSync: new Date().toISOString(),
+                        });
                         showToast("Synced with GitHub");
                       }}
                     >
@@ -177,12 +231,56 @@ export function DeployPanel({ project }: { project: Project }) {
               )}
             </div>
 
+            {(project.pullRequests?.length ?? 0) > 0 && (
+              <div className="card p-4 space-y-2 fade-in">
+                <h3 className="m-0 label-caps">Pull requests</h3>
+                {project.pullRequests.map((pr) => (
+                  <div
+                    key={pr.number}
+                    className="flex items-start justify-between gap-2 p-2.5 rounded-lg"
+                    style={{ background: "var(--surface-2)" }}
+                  >
+                    <div>
+                      <div className="text-sm font-semibold">
+                        #{pr.number} · {pr.title}
+                      </div>
+                      <a
+                        className="mono text-xs"
+                        style={{ color: "var(--accent)" }}
+                        href={pr.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {pr.url}
+                      </a>
+                    </div>
+                    <span className="chip chip-signal shrink-0">Open</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {prefs.mode === "architect" && (
               <div className="card p-4 space-y-3 fade-in">
                 <h3 className="m-0 label-caps">Advanced</h3>
-                <ToggleRow label="Analytics" hint="Page views on Stage" on={analytics} set={setAnalytics} />
-                <ToggleRow label="Marketplace publish" hint="List in Architect marketplace" on={marketplace} set={setMarketplace} />
-                <ToggleRow label="VPC / private deploy" hint="Enterprise network (UI only)" on={vpc} set={setVpc} />
+                <ToggleRow
+                  label="Analytics"
+                  hint="Page views on Stage"
+                  on={analytics}
+                  set={setAnalytics}
+                />
+                <ToggleRow
+                  label="Marketplace publish"
+                  hint="List in Architect marketplace"
+                  on={marketplace}
+                  set={setMarketplace}
+                />
+                <ToggleRow
+                  label="VPC / private deploy"
+                  hint="Enterprise network (demo toggle)"
+                  on={vpc}
+                  set={setVpc}
+                />
               </div>
             )}
           </div>

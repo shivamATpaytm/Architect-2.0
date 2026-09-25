@@ -2,33 +2,59 @@
 
 import { useEffect, useState } from "react";
 import type { AgentNode } from "@/lib/types";
+import {
+  clearAgentDraft,
+  loadAgentDrafts,
+  saveAgentDraft,
+} from "@/lib/storage";
 
 const MODELS = ["claude-sonnet-4", "gpt-4.1", "gpt-4.1-mini", "—"];
 const ALL_TOOLS = ["Web search", "Gmail", "HubSpot", "LinkedIn stub", "Slack"];
 
 export function AgentInspector({
   agent,
+  projectId,
   onChange,
   onStudio,
+  onToast,
 }: {
   agent: AgentNode | null;
+  projectId: string;
   onChange: (a: AgentNode) => void;
   onStudio: () => void;
+  onToast: (msg: string) => void;
 }) {
   const [draft, setDraft] = useState<AgentNode | null>(agent);
 
   useEffect(() => {
-    setDraft(agent);
-  }, [agent]);
+    if (!agent) {
+      setDraft(null);
+      return;
+    }
+    const drafts = loadAgentDrafts(projectId);
+    const saved = drafts[agent.id];
+    setDraft(saved ? { ...agent, ...saved, id: agent.id } : agent);
+  }, [agent, projectId]);
+
+  useEffect(() => {
+    if (!draft || !agent) return;
+    const dirty =
+      draft.systemPrompt !== agent.systemPrompt ||
+      draft.model !== agent.model ||
+      JSON.stringify(draft.tools) !== JSON.stringify(agent.tools);
+    if (dirty) saveAgentDraft(projectId, draft);
+  }, [draft, agent, projectId]);
 
   if (!agent || !draft) {
     return (
       <aside
-        className="w-[340px] shrink-0 border-l p-5"
+        className="w-[340px] max-w-full shrink-0 border-l p-5"
         style={{ borderColor: "var(--border)", background: "var(--surface)" }}
       >
         <div className="sketch-empty p-6">
-          <p className="text-sm m-0">Select an agent to inspect prompts, tools, and knowledge.</p>
+          <p className="text-sm m-0">
+            Select an agent to inspect prompts, tools, and knowledge.
+          </p>
         </div>
       </aside>
     );
@@ -41,9 +67,19 @@ export function AgentInspector({
     setDraft({ ...draft, tools });
   };
 
+  const save = () => {
+    try {
+      onChange(draft);
+      clearAgentDraft(projectId, draft.id);
+      onToast(`Saved ${draft.name}`);
+    } catch {
+      onToast(`Could not save ${draft.name}`);
+    }
+  };
+
   return (
     <aside
-      className="w-[340px] shrink-0 border-l flex flex-col min-h-0"
+      className="w-[340px] max-w-full shrink-0 border-l flex flex-col min-h-0"
       style={{ borderColor: "var(--border)", background: "var(--surface)" }}
     >
       <div className="p-4 border-b" style={{ borderColor: "var(--border)" }}>
@@ -113,7 +149,7 @@ export function AgentInspector({
         </div>
       </div>
       <div className="p-3 border-t flex gap-2" style={{ borderColor: "var(--border)" }}>
-        <button type="button" className="btn btn-primary flex-1" onClick={() => onChange(draft)}>
+        <button type="button" className="btn btn-primary flex-1" onClick={save}>
           Save changes
         </button>
         <button type="button" className="btn" onClick={onStudio}>

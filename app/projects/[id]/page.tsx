@@ -12,6 +12,8 @@ import { AgentCanvas } from "@/components/agents/AgentCanvas";
 import { BlueprintView } from "@/components/blueprint/BlueprintView";
 import { CodeView } from "@/components/code/CodeView";
 import { DeployPanel } from "@/components/ship/DeployPanel";
+import { DataPanel } from "@/components/data/DataPanel";
+import { IntegrationsPanel } from "@/components/integrations/IntegrationsPanel";
 import { useApp } from "@/components/providers/AppProvider";
 import type { StudioView } from "@/lib/types";
 
@@ -49,7 +51,7 @@ function StudioInner() {
   const id = String(params.id);
   const viewParam = (search.get("view") || "build") as StudioView;
   const view = VIEWS.includes(viewParam) ? viewParam : "build";
-  const { getProject, ready, prefs } = useApp();
+  const { getProject, ready, prefs, deployProject } = useApp();
   const router = useRouter();
   const project = getProject(id);
 
@@ -92,6 +94,7 @@ function StudioInner() {
       <AppHeader
         projectName={project.name}
         deployHref={`/projects/${project.id}?view=ship`}
+        onDeploy={() => deployProject(project.id)}
       />
       <div
         className="px-4 py-2 border-b flex items-center justify-between gap-3 flex-wrap shrink-0"
@@ -128,47 +131,10 @@ function StudioInner() {
         {view === "agents" && <AgentCanvas project={project} />}
         {view === "code" && <CodeView project={project} />}
         {view === "ship" && <DeployPanel project={project} />}
-        {view === "data" && (
-          <StubView
-            title="Data & knowledge"
-            body="Attach PDFs and CSVs to the crew knowledge base. This demo already seeds icp-guide.pdf and pricing.csv on Lead Nurture Crew — open Agents to see attachments per node."
-            ctaLabel="Open Agents"
-            onCta={() => router.push(`/projects/${project.id}?view=agents`)}
-          />
-        )}
-        {view === "integrations" && (
-          <StubView
-            title="Integrations"
-            body="Connectors for Gmail, HubSpot, Slack, and web search. Toggle wiring from the Agents inspector in this demo — no real OAuth."
-            ctaLabel="Open Agents"
-            onCta={() => router.push(`/projects/${project.id}?view=agents`)}
-          />
-        )}
+        {view === "data" && <DataPanel project={project} />}
+        {view === "integrations" && <IntegrationsPanel project={project} />}
       </div>
     </div>
   );
 }
 
-function StubView({
-  title,
-  body,
-  ctaLabel,
-  onCta,
-}: {
-  title: string;
-  body: string;
-  ctaLabel: string;
-  onCta: () => void;
-}) {
-  return (
-    <div className="h-full flex items-center justify-center p-6 blueprint-grid">
-      <div className="sketch-empty max-w-lg">
-        <p className="display text-2xl m-0 mb-2">{title}</p>
-        <p className="m-0 text-sm mb-4">{body}</p>
-        <button type="button" className="btn btn-primary" onClick={onCta}>
-          {ctaLabel}
-        </button>
-      </div>
-    </div>
-  );
-}

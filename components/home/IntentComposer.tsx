@@ -7,12 +7,18 @@ import { useApp } from "@/components/providers/AppProvider";
 
 export function IntentComposer() {
   const [intent, setIntent] = useState("");
-  const { createFromIntent, prefs } = useApp();
+  const [touched, setTouched] = useState(false);
+  const { createFromIntent, prefs, showToast } = useApp();
   const router = useRouter();
+  const empty = !intent.trim();
 
   const submit = () => {
+    setTouched(true);
     const text = intent.trim();
-    if (!text) return;
+    if (!text) {
+      showToast("Describe an intent before starting");
+      return;
+    }
     const project = createFromIntent(text);
     router.push(`/projects/${project.id}?view=build`);
   };
@@ -42,12 +48,24 @@ export function IntentComposer() {
         }
         value={intent}
         onChange={(e) => setIntent(e.target.value)}
+        onBlur={() => setTouched(true)}
         onKeyDown={(e) => {
           if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submit();
         }}
       />
+      {touched && empty && (
+        <p className="text-sm m-0 mt-2" style={{ color: "var(--danger)" }}>
+          Enter an intent to enable Start building.
+        </p>
+      )}
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <button type="button" className="btn btn-primary" onClick={submit} disabled={!intent.trim()}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={submit}
+          disabled={empty}
+          title={empty ? "Enter an intent first" : "Create project"}
+        >
           Start building
         </button>
         <Link href="/import" className="btn">

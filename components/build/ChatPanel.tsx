@@ -15,10 +15,20 @@ export function ChatPanel({ project }: { project: Project }) {
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<Phase[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const [showJump, setShowJump] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowJump(false);
   }, [project.chat.length, running]);
+
+  const onScroll = () => {
+    const el = listRef.current;
+    if (!el) return;
+    const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowJump(dist > 120);
+  };
 
   const navigateChip = (c: string) => {
     const lower = c.toLowerCase();
@@ -131,7 +141,20 @@ export function ChatPanel({ project }: { project: Project }) {
         phase: step.phase,
         chat,
         previewReady: step.phase === "stage" ? true : project.previewReady,
-        status: step.phase === "stage" ? "building" : "building",
+        status: step.phase === "stage" ? "ready" : "building",
+        buildProgress: {
+          state: step.phase === "stage" ? "ready" : "building",
+          stepLabel:
+            step.phase === "stage"
+              ? "Ready on Stage"
+              : `${capitalize(step.phase)} in progress`,
+          etaLabel: step.phase === "stage" ? "Done" : "~20s",
+          startedAt: new Date().toISOString(),
+          percent:
+            step.phase === "stage"
+              ? 100
+              : 25 + (PHASE_ORDER.indexOf(step.phase) + 1) * 18,
+        },
       });
     }
     setRunning(false);
@@ -182,7 +205,7 @@ export function ChatPanel({ project }: { project: Project }) {
         </div>
       )}
 
-      <div className="scroll-y flex-1 px-3 py-3 space-y-2.5 min-h-0">
+      <div ref={listRef} onScroll={onScroll} className="scroll-y flex-1 px-3 py-3 space-y-2.5 min-h-0 relative">
         {project.chat.map((m) => (
           <div
             key={m.id}
@@ -216,6 +239,19 @@ export function ChatPanel({ project }: { project: Project }) {
           </div>
         ))}
         <div ref={bottomRef} />
+        {showJump && (
+          <button
+            type="button"
+            className="btn btn-sm"
+            style={{ position: "sticky", bottom: 8, left: "50%", transform: "translateX(-50%)", zIndex: 2 }}
+            onClick={() => {
+              bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+              setShowJump(false);
+            }}
+          >
+            Jump to latest
+          </button>
+        )}
       </div>
 
       <div
