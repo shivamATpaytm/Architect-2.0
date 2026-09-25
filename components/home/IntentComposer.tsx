@@ -28,7 +28,7 @@ export function IntentComposer() {
       return;
     }
     const project = createFromIntent(text);
-    router.push(`/projects/${project.id}?view=build`);
+    router.push(`/projects/${project.id}?view=build&panel=preview`);
   };
 
   return (

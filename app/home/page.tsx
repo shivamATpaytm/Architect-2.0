@@ -104,7 +104,7 @@ function HomeInner() {
                 className="chip"
                 onClick={() => {
                   const p = createFromIntent(`Build ${t.name}: ${t.pitch}`, t.id);
-                  router.push(`/projects/${p.id}?view=build`);
+                  router.push(`/projects/${p.id}?view=build&panel=preview`);
                 }}
               >
                 + {t.name}
@@ -132,12 +132,12 @@ function HomeInner() {
                 const p = createFromIntent(
                   "Lead nurture for SaaS SDRs with email + Slack"
                 );
-                router.push(`/projects/${p.id}?view=build`);
+                router.push(`/projects/${p.id}?view=build&panel=preview`);
               }}
             >
               Try novel prompt
             </button>
-            <Link href="/projects/proj-lead-nurture?view=build" className="btn btn-primary btn-sm">
+            <Link href="/projects/proj-lead-nurture?view=build&panel=preview" className="btn btn-primary btn-sm">
               Open seed project
             </Link>
           </div>

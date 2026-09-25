@@ -32,7 +32,7 @@ export function ProjectGrid() {
         return (
           <Link
             key={p.id}
-            href={`/projects/${p.id}?view=build`}
+            href={`/projects/${p.id}?view=build&panel=preview`}
             className="card card-hover p-4 block fade-in"
           >
             <div className="flex items-start justify-between gap-2 mb-2">

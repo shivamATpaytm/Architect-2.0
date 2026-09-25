@@ -56,6 +56,7 @@ interface AppContextValue {
   refineProject: (id: string, instruction: string) => void;
   checkpointProject: (id: string, label?: string) => void;
   restoreCheckpoint: (id: string, checkpointId: string) => void;
+  rebuildProject: (id: string) => void;
   toast: string | null;
   showToast: (msg: string) => void;
 }
@@ -544,6 +545,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [showToast]
   );
 
+  const rebuildProject = useCallback(
+    (id: string) => {
+      const project = projects.find((p) => p.id === id);
+      if (!project) return;
+      const prompt =
+        (project.prompt && project.prompt.trim()) ||
+        project.pitch ||
+        "Rebuild agentic workspace";
+      const templateId = project.template;
+      const now = new Date().toISOString();
+      patchProject(id, {
+        status: "queued",
+        phase: "consulting",
+        previewReady: false,
+        screens: [],
+        agents: [],
+        blueprint: [],
+        files: [],
+        activeScreenId: undefined,
+        generationVersion: 0,
+        buildProgress: {
+          state: "queued",
+          stepLabel: "Understanding prompt",
+          etaLabel: "~40s",
+          startedAt: now,
+          percent: 5,
+          step: "understanding",
+        },
+        chat: [
+          ...project.chat,
+          {
+            id: uid("msg"),
+            role: "system",
+            phase: "consulting",
+            content: "Rebuild started — Understanding → Spec → UI → Agents → Ready",
+            timestamp: now,
+          },
+        ],
+        updatedAt: now,
+      });
+      scheduleBuildLifecycle(id, prompt, templateId);
+      setToast("Rebuilding from prompt…");
+    },
+    [projects, patchProject, scheduleBuildLifecycle]
+  );
+
   const createFromImport = useCallback((source: string, label: string) => {
     const base = createLeadNurtureProject();
     const now = new Date().toISOString();
@@ -638,6 +685,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       refineProject,
       checkpointProject,
       restoreCheckpoint,
+      rebuildProject,
       toast,
       showToast,
     }),
@@ -661,6 +709,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       refineProject,
       checkpointProject,
       restoreCheckpoint,
+      rebuildProject,
       toast,
       showToast,
     ]

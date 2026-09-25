@@ -34,7 +34,7 @@ function NewInner() {
       const p = createFromIntent(
         "Empty agentic scaffold with placeholder crew and Stage shell"
       );
-      router.replace(`/projects/${p.id}?view=build`);
+      router.replace(`/projects/${p.id}?view=build&panel=preview`);
     }
   }, [params, createFromIntent, router]);
 
@@ -57,7 +57,7 @@ function NewInner() {
             onKeyDown={(e) => {
               if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && intent.trim()) {
                 const p = createFromIntent(intent.trim());
-                router.push(`/projects/${p.id}?view=build`);
+                router.push(`/projects/${p.id}?view=build&panel=preview`);
               }
             }}
           />
@@ -68,7 +68,7 @@ function NewInner() {
             onClick={() => {
               if (!intent.trim()) return;
               const p = createFromIntent(intent.trim());
-              router.push(`/projects/${p.id}?view=build`);
+              router.push(`/projects/${p.id}?view=build&panel=preview`);
             }}
           >
             Build project
@@ -84,7 +84,7 @@ function NewInner() {
               className="card card-hover p-4 text-left"
               onClick={() => {
                 const p = createFromIntent(`Build ${t.name}: ${t.pitch}`, t.id);
-                router.push(`/projects/${p.id}?view=build`);
+                router.push(`/projects/${p.id}?view=build&panel=preview`);
               }}
             >
               <div className="font-semibold">{t.name}</div>

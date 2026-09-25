@@ -16,7 +16,7 @@ const BUILD_STEPS = [
 ] as const;
 
 export function PreviewStage({ project }: { project: Project }) {
-  const { prefs, showToast, updateProject, restoreCheckpoint, checkpointProject } = useApp();
+  const { prefs, showToast, updateProject, restoreCheckpoint, checkpointProject, rebuildProject } = useApp();
   const router = useRouter();
   const [device, setDevice] = useState<Device>("desktop");
   const [tweak, setTweak] = useState(false);
@@ -148,7 +148,7 @@ export function PreviewStage({ project }: { project: Project }) {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-[420px]">
       <div
         className="flex items-center justify-between gap-2 px-3 py-2.5 border-b flex-wrap shrink-0"
         style={{ borderColor: "var(--border)" }}
@@ -286,29 +286,28 @@ export function PreviewStage({ project }: { project: Project }) {
               onRun={runOutreach}
             />
           ) : project.previewReady && screens.length === 0 ? (
-            <LegacyLeadFallback outreach={outreach} onRun={runOutreach} project={project} />
+            <EmptyPreviewState
+              project={project}
+              onRebuild={() => rebuildProject(project.id)}
+            />
+          ) : screens.length > 0 && active ? (
+            <GeneratedScreen
+              screen={active}
+              project={project}
+              outreach={outreach}
+              onRun={runOutreach}
+            />
           ) : (
-            <div className="sketch-empty m-5">
-              <p className="display text-xl m-0 mb-1">
-                {step === "understanding"
-                  ? "Thinking…"
-                  : step === "spec"
-                    ? "Writing docs…"
-                    : step === "ui"
-                      ? "Building screens…"
-                      : "Assembling…"}
-              </p>
-              <p className="m-0 text-sm mb-3">
-                {project.buildProgress
+            <GeneratingSkeletons
+              step={step}
+              percent={project.buildProgress?.percent ?? 10}
+              stepLabel={
+                project.buildProgress
                   ? `${project.buildProgress.stepLabel} · ${project.buildProgress.etaLabel}`
-                  : "Generation will populate Stage as screens appear."}
-              </p>
-              {project.blueprint.length > 0 && (
-                <p className="m-0 text-xs" style={{ color: "var(--ok)" }}>
-                  ✓ Blueprint sections ready — open Blueprint view
-                </p>
-              )}
-            </div>
+                  : "Generation will populate Stage as screens appear."
+              }
+              blueprintReady={project.blueprint.length > 0}
+            />
           )}
         </div>
 
@@ -566,44 +565,112 @@ function GeneratedScreen({
   );
 }
 
-function LegacyLeadFallback({
-  outreach,
-  onRun,
+function EmptyPreviewState({
   project,
+  onRebuild,
 }: {
-  outreach: NonNullable<Project["outreach"]>;
-  onRun: () => void;
   project: Project;
+  onRebuild: () => void;
 }) {
-  const busy = outreach.status === "queued" || outreach.status === "running";
   return (
-    <div className="p-5" style={{ background: "var(--bg)" }}>
-      <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
-        <div>
-          <div className="label-caps mb-1">Preview</div>
-          <h2 className="display text-[28px] m-0">{project.name}</h2>
-          <p className="m-0 text-sm mt-1" style={{ color: "var(--ink-muted)" }}>
-            {project.pitch}
+    <div className="sketch-empty m-5" style={{ background: "var(--bg)" }}>
+      <p className="display text-xl m-0 mb-1">No screens on Stage</p>
+      <p className="m-0 text-sm mb-4" style={{ color: "var(--ink-muted)" }}>
+        Preview is ready but empty. Rebuild from the original prompt to regenerate UI
+        {project.prompt ? ` (“${project.prompt.slice(0, 72)}${project.prompt.length > 72 ? "…" : ""}”)` : ""}.
+      </p>
+      <button type="button" className="btn btn-primary" onClick={onRebuild}>
+        Rebuild from prompt
+      </button>
+    </div>
+  );
+}
+
+function GeneratingSkeletons({
+  step,
+  percent,
+  stepLabel,
+  blueprintReady,
+}: {
+  step: string;
+  percent: number;
+  stepLabel: string;
+  blueprintReady: boolean;
+}) {
+  // Skeletons appear one-by-one as progress advances — never a blank black void.
+  const visible =
+    percent >= 70 ? 4 : percent >= 50 ? 3 : percent >= 30 ? 2 : percent >= 12 ? 1 : 1;
+  const titles =
+    step === "understanding"
+      ? "Thinking…"
+      : step === "spec"
+        ? "Writing docs…"
+        : step === "ui"
+          ? "Building screens…"
+          : step === "agents"
+            ? "Assembling crew…"
+            : "Assembling…";
+
+  return (
+    <div className="p-5 fade-in" style={{ background: "var(--bg)" }}>
+      <div className="mb-4">
+        <div className="label-caps mb-1">Stage</div>
+        <h2 className="display text-[24px] m-0">{titles}</h2>
+        <p className="m-0 text-sm mt-1" style={{ color: "var(--ink-muted)" }}>
+          {stepLabel}
+        </p>
+        {blueprintReady && (
+          <p className="m-0 text-xs mt-1" style={{ color: "var(--ok)" }}>
+            ✓ Blueprint sections ready — screens filling in
           </p>
-        </div>
-        <button type="button" className="btn btn-signal" onClick={onRun} disabled={busy}>
-          {busy ? "Running…" : "Run workflow"}
-        </button>
+        )}
       </div>
       <div className="grid gap-3 sm:grid-cols-3 mb-4">
-        {[
-          ["Queued", String(outreach.counts.leads)],
-          ["Drafts", String(outreach.counts.drafts)],
-          ["Synced", String(outreach.counts.crm)],
-        ].map(([label, val]) => (
-          <div key={label} className="card p-3.5">
-            <div className="text-xs" style={{ color: "var(--ink-muted)" }}>
-              {label}
-            </div>
-            <div className="display text-[26px] mt-0.5">{val}</div>
+        {Array.from({ length: Math.min(visible, 3) }).map((_, i) => (
+          <div
+            key={`stat-sk-${i}`}
+            className="card p-3.5 fade-in"
+            style={{ animationDelay: `${i * 120}ms` }}
+          >
+            <div
+              className="rounded h-3 w-16 mb-2"
+              style={{ background: "var(--surface-3)" }}
+            />
+            <div
+              className="rounded h-7 w-12"
+              style={{ background: "var(--surface-3)" }}
+            />
           </div>
         ))}
       </div>
+      <div className="card overflow-hidden">
+        {Array.from({ length: Math.max(2, visible) }).map((_, i) => (
+          <div
+            key={`row-sk-${i}`}
+            className="flex gap-3 p-3 fade-in"
+            style={{
+              borderTop: i === 0 ? undefined : "1px solid var(--border)",
+              animationDelay: `${(i + 1) * 140}ms`,
+            }}
+          >
+            <div
+              className="rounded h-4 flex-1"
+              style={{ background: "var(--surface-3)", maxWidth: "40%" }}
+            />
+            <div
+              className="rounded h-4 w-16"
+              style={{ background: "var(--surface-3)" }}
+            />
+            <div
+              className="rounded h-4 flex-1 hidden sm:block"
+              style={{ background: "var(--surface-3)" }}
+            />
+          </div>
+        ))}
+      </div>
+      <p className="mono text-[11px] mt-3 m-0" style={{ color: "var(--ink-faint)" }}>
+        Screens will appear here one by one — stay on Preview.
+      </p>
     </div>
   );
 }

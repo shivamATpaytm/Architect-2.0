@@ -68,7 +68,7 @@ export function ImportTabs() {
             : "URL";
     const project = createFromImport(source, label);
     showToast(`Imported ${label}`);
-    router.push(`/projects/${project.id}?view=build`);
+    router.push(`/projects/${project.id}?view=build&panel=preview`);
   };
 
   return (

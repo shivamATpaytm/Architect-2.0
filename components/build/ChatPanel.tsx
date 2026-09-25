@@ -9,7 +9,13 @@ import { uid } from "@/lib/storage";
 const STEP_ORDER: BuildStep[] = ["understanding", "spec", "ui", "agents", "ready"];
 const REFINE_CHIPS = ["Make denser", "Add auth", "Dark dashboard", "Make casual"];
 
-export function ChatPanel({ project }: { project: Project }) {
+export function ChatPanel({
+  project,
+  onShowPreview,
+}: {
+  project: Project;
+  onShowPreview?: () => void;
+}) {
   const { updateProject, prefs, showToast, refineProject, checkpointProject } = useApp();
   const router = useRouter();
   const [draft, setDraft] = useState("");
@@ -54,6 +60,11 @@ export function ChatPanel({ project }: { project: Project }) {
       return;
     }
     if (lower.includes("tweak") || lower.includes("preview")) {
+      if (onShowPreview && lower.includes("preview")) {
+        onShowPreview();
+        showToast("Switched to Preview");
+        return;
+      }
       showToast("Use Visual tweak on the Stage toolbar");
       return;
     }
@@ -230,6 +241,26 @@ export function ChatPanel({ project }: { project: Project }) {
               {c}
             </button>
           ))}
+        </div>
+      )}
+
+      {onShowPreview && (
+        <div className="px-3 pb-2 shrink-0 md:hidden sticky bottom-0 z-[1]">
+          <button
+            type="button"
+            className="btn btn-signal w-full"
+            onClick={() => {
+              onShowPreview();
+              requestAnimationFrame(() => {
+                document.getElementById("stage-panel")?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "nearest",
+                });
+              });
+            }}
+          >
+            Show preview
+          </button>
         </div>
       )}
 

@@ -68,7 +68,7 @@ export function ConsultantPanel() {
             style={{ alignItems: "flex-start", flexDirection: "column", gap: 4, padding: "0.75rem 0.85rem" }}
             onClick={() => {
               const project = createFromIntent(`Build ${idea.name}: ${idea.pitch}`, idea.id);
-              router.push(`/projects/${project.id}?view=build`);
+              router.push(`/projects/${project.id}?view=build&panel=preview`);
             }}
           >
             <span className="font-semibold text-sm">{idea.name}</span>

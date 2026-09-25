@@ -40,7 +40,7 @@ export function SimpleChat() {
     setHomeMode("build");
     const project = createFromIntent(prompt);
     showToast("Turning chat into a project…");
-    router.push(`/projects/${project.id}?view=build`);
+    router.push(`/projects/${project.id}?view=build&panel=preview`);
   };
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { AuthGate } from "@/components/chrome/AuthGate";
 import { AppHeader } from "@/components/chrome/AppHeader";
@@ -51,6 +51,7 @@ function StudioInner() {
   const id = String(params.id);
   const viewParam = (search.get("view") || "build") as StudioView;
   const view = VIEWS.includes(viewParam) ? viewParam : "build";
+  const panelParam = search.get("panel");
   const { getProject, ready, prefs, deployProject } = useApp();
   const router = useRouter();
   const project = getProject(id);
@@ -59,6 +60,26 @@ function StudioInner() {
     () => project?.agents.filter((a) => a.id.startsWith("agent-")).length ?? 0,
     [project]
   );
+
+  // Mobile/stacked: Chat | Preview tabs. Default Preview so Stage is never buried.
+  const [mobilePane, setMobilePane] = useState<"chat" | "preview">(() =>
+    panelParam === "chat" ? "chat" : "preview"
+  );
+
+  const buildStep = project?.buildProgress?.step;
+  const previewReady = project?.previewReady;
+
+  // Once UI generation starts (or ready), focus Preview on small screens.
+  useEffect(() => {
+    if (
+      buildStep === "ui" ||
+      buildStep === "agents" ||
+      buildStep === "ready" ||
+      previewReady
+    ) {
+      setMobilePane("preview");
+    }
+  }, [buildStep, previewReady]);
 
   if (!ready) {
     return (
@@ -115,15 +136,56 @@ function StudioInner() {
 
       <div className="flex-1 min-h-0 overflow-hidden">
         {view === "build" && (
-          <div className="grid h-full min-h-0 lg:grid-cols-[minmax(320px,38%)_minmax(0,62%)]">
+          <div className="flex flex-col h-full min-h-0">
+            {/* Mobile / stacked: Chat | Preview toggle */}
             <div
-              className="min-h-0 border-r"
+              className="flex md:hidden items-center px-3 py-2 border-b shrink-0"
               style={{ borderColor: "var(--border)", background: "var(--surface)" }}
             >
-              <ChatPanel project={project} />
+              <div className="seg w-full" role="tablist" aria-label="Build panels">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mobilePane === "chat"}
+                  className={`seg-item flex-1 ${mobilePane === "chat" ? "active" : ""}`}
+                  onClick={() => setMobilePane("chat")}
+                >
+                  Chat
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mobilePane === "preview"}
+                  className={`seg-item flex-1 ${mobilePane === "preview" ? "active" : ""}`}
+                  onClick={() => setMobilePane("preview")}
+                >
+                  Preview
+                </button>
+              </div>
             </div>
-            <div className="min-h-0" style={{ background: "var(--bg)" }}>
-              <PreviewStage project={project} />
+
+            {/* ≥768px: side-by-side Chat | Stage (Stage ≥55%). Below: one pane fills height. */}
+            <div className="grid flex-1 min-h-0 h-full md:grid-cols-[minmax(260px,40%)_minmax(0,60%)]">
+              <div
+                className={`min-h-0 h-full border-r flex-col ${
+                  mobilePane === "chat" ? "flex" : "hidden"
+                } md:flex`}
+                style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+              >
+                <ChatPanel
+                  project={project}
+                  onShowPreview={() => setMobilePane("preview")}
+                />
+              </div>
+              <div
+                id="stage-panel"
+                className={`h-full min-h-[420px] flex-col ${
+                  mobilePane === "preview" ? "flex" : "hidden"
+                } md:flex`}
+                style={{ background: "var(--bg)" }}
+              >
+                <PreviewStage project={project} />
+              </div>
             </div>
           </div>
         )}
@@ -137,4 +199,3 @@ function StudioInner() {
     </div>
   );
 }
-
